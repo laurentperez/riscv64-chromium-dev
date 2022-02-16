@@ -1,0 +1,1980 @@
+From 1c6c5d63762093b0c2d391a5e135065ba2e702be Mon Sep 17 00:00:00 2001
+From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+Date: Tue, 15 Feb 2022 05:37:01 +0000
+Subject: [PATCH 27/27] internal: patchset: archive untracked file as patchset
+
+Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+---
+ patchset/0001-third-party-libjpeg-turbo.patch |   17 +
+ patchset/0002-third-party-angle.patch         |   27 +
+ patchset/0003-third-party-dawn.patch          |   13 +
+ patchset/0004-third-party-ffmpeg.patch        | 1242 +++++++++++++++++
+ patchset/0005-third-party-pdfium.patch        |   13 +
+ patchset/0006-third-party-webrtc.patch        |   61 +
+ patchset/0007-v8.patch                        |  144 ++
+ patchset/0008-third-party-swiftshader.patch   |  362 +++++
+ patchset/0009-third-party-libjxl-src.patch    |   17 +
+ 9 files changed, 1896 insertions(+)
+ create mode 100644 patchset/0001-third-party-libjpeg-turbo.patch
+ create mode 100644 patchset/0002-third-party-angle.patch
+ create mode 100644 patchset/0003-third-party-dawn.patch
+ create mode 100644 patchset/0004-third-party-ffmpeg.patch
+ create mode 100644 patchset/0005-third-party-pdfium.patch
+ create mode 100644 patchset/0006-third-party-webrtc.patch
+ create mode 100644 patchset/0007-v8.patch
+ create mode 100644 patchset/0008-third-party-swiftshader.patch
+ create mode 100644 patchset/0009-third-party-libjxl-src.patch
+
+diff --git a/patchset/0001-third-party-libjpeg-turbo.patch b/patchset/0001-third-party-libjpeg-turbo.patch
+new file mode 100644
+index 0000000000000..ff4bce427fa52
+--- /dev/null
++++ b/patchset/0001-third-party-libjpeg-turbo.patch
+@@ -0,0 +1,17 @@
++diff --git a/jpeglib.h b/jpeglib.h
++index a717928..d7664f0 100644
++--- a/jpeglib.h
+++++ b/jpeglib.h
++@@ -18,12 +18,6 @@
++ #ifndef JPEGLIB_H
++ #define JPEGLIB_H
++ 
++-/* Begin chromium edits */
++-#ifdef MANGLE_JPEG_NAMES
++-#include "jpeglibmangler.h"
++-#endif
++-/* End chromium edits */
++-
++ /*
++  * First we include the configuration files that record how this
++  * installation of the JPEG library is set up.  jconfig.h can be
+diff --git a/patchset/0002-third-party-angle.patch b/patchset/0002-third-party-angle.patch
+new file mode 100644
+index 0000000000000..7eb9c1ad40b54
+--- /dev/null
++++ b/patchset/0002-third-party-angle.patch
+@@ -0,0 +1,27 @@
++diff --git a/BUILD.gn b/BUILD.gn
++index c14307a23..d8ca24377 100644
++--- a/BUILD.gn
+++++ b/BUILD.gn
++@@ -217,6 +217,9 @@ config("extra_warnings") {
++       "-Wstrict-prototypes",
++       "-Wunreachable-code-aggressive",
++       "-Wshorten-64-to-32",
+++
+++      # Workaround for clang unable to locate pci/pci.h header
+++      "-isystem../../build/linux/debian_sid_riscv64-sysroot/usr/include/riscv64-linux-gnu",
++     ]
++   }
++ 
++diff --git a/gni/angle.gni b/gni/angle.gni
++index 90ac07936..896e23854 100644
++--- a/gni/angle.gni
+++++ b/gni/angle.gni
++@@ -75,7 +75,7 @@ declare_args() {
++     angle_64bit_current_cpu = true
++   } else if (current_cpu == "arm" || current_cpu == "x86" ||
++              current_cpu == "mipsel" || current_cpu == "s390" ||
++-             current_cpu == "ppc") {
+++             current_cpu == "ppc" || current_cpu == "riscv64") {
++     angle_64bit_current_cpu = false
++   } else {
++     assert(false, "Unknown current CPU: $current_cpu")
+diff --git a/patchset/0003-third-party-dawn.patch b/patchset/0003-third-party-dawn.patch
+new file mode 100644
+index 0000000000000..37b318e486a51
+--- /dev/null
++++ b/patchset/0003-third-party-dawn.patch
+@@ -0,0 +1,13 @@
++diff --git a/src/dawn/common/Platform.h b/src/dawn/common/Platform.h
++index f9471021..81fe7840 100644
++--- a/src/dawn/common/Platform.h
+++++ b/src/dawn/common/Platform.h
++@@ -68,7 +68,7 @@
++ #endif
++ 
++ #if defined(_WIN64) || defined(__aarch64__) || defined(__x86_64__) || defined(__mips64__) || \
++-    defined(__s390x__) || defined(__PPC64__)
+++    defined(__s390x__) || defined(__PPC64__) || defined(__riscv)
++ #    define DAWN_PLATFORM_64_BIT 1
++ static_assert(sizeof(sizeof(char)) == 8, "Expect sizeof(size_t) == 8");
++ #elif defined(_WIN32) || defined(__arm__) || defined(__i386__) || defined(__mips32__) || \
+diff --git a/patchset/0004-third-party-ffmpeg.patch b/patchset/0004-third-party-ffmpeg.patch
+new file mode 100644
+index 0000000000000..a9ff2094eb867
+--- /dev/null
++++ b/patchset/0004-third-party-ffmpeg.patch
+@@ -0,0 +1,1242 @@
++diff --git a/BUILD.gn b/BUILD.gn
++index 5ea4e37336..e9f7934b3c 100755
++--- a/BUILD.gn
+++++ b/BUILD.gn
++@@ -7,6 +7,7 @@ import("ffmpeg_options.gni")
++ 
++ import("//build/buildflag_header.gni")
++ import("//build/config/compiler/compiler.gni")
+++import("//build/config/sysroot.gni")
++ import("//build/config/sanitizers/sanitizers.gni")
++ 
++ # Path to platform configuration files.
++diff --git a/CREDITS.chromium b/CREDITS.chromium
++index 1a12e2a528..8cbb66d9d1 100644
++--- a/CREDITS.chromium
+++++ b/CREDITS.chromium
++@@ -129,160 +129,6 @@ incompatible with the GPLv2 and v3. To the best of our knowledge, they are
++ compatible with the LGPL.
++ 
++ 
++-********************************************************************************
++-
++-libavcodec/arm/jrevdct_arm.S
++-
++-C-like prototype :
++-        void j_rev_dct_arm(DCTBLOCK data)
++-
++-   With DCTBLOCK being a pointer to an array of 64 'signed shorts'
++-
++-   Copyright (c) 2001 Lionel Ulmer (lionel.ulmer@free.fr / bbrox@bbrox.org)
++-
++-   Permission is hereby granted, free of charge, to any person obtaining a copy
++-   of this software and associated documentation files (the "Software"), to deal
++-   in the Software without restriction, including without limitation the rights
++-   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++-   copies of the Software, and to permit persons to whom the Software is
++-   furnished to do so, subject to the following conditions:
++-
++-   The above copyright notice and this permission notice shall be included in
++-   all copies or substantial portions of the Software.
++-
++-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++-   COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
++-   IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
++-   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++-
++-********************************************************************************
++-
++-libavcodec/arm/vp8dsp_armv6.S
++-
++-VP8 ARMv6 optimisations
++-
++-Copyright (c) 2010 Google Inc.
++-Copyright (c) 2010 Rob Clark <rob@ti.com>
++-Copyright (c) 2011 Mans Rullgard <mans@mansr.com>
++-
++-This file is part of FFmpeg.
++-
++-FFmpeg is free software; you can redistribute it and/or
++-modify it under the terms of the GNU Lesser General Public
++-License as published by the Free Software Foundation; either
++-version 2.1 of the License, or (at your option) any later version.
++-
++-FFmpeg is distributed in the hope that it will be useful,
++-but WITHOUT ANY WARRANTY; without even the implied warranty of
++-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++-Lesser General Public License for more details.
++-
++-You should have received a copy of the GNU Lesser General Public
++-License along with FFmpeg; if not, write to the Free Software
++-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++-
++-This code was partially ported from libvpx, which uses this license:
++-
++-Redistribution and use in source and binary forms, with or without
++-modification, are permitted provided that the following conditions are
++-met:
++-
++-* Redistributions of source code must retain the above copyright
++-notice, this list of conditions and the following disclaimer.
++-
++-* Redistributions in binary form must reproduce the above copyright
++-notice, this list of conditions and the following disclaimer in
++-the documentation and/or other materials provided with the
++-distribution.
++-
++-* Neither the name of Google nor the names of its contributors may
++-be used to endorse or promote products derived from this software
++-without specific prior written permission.
++-
++-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++-HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++-
++-********************************************************************************
++-
++-libavcodec/x86/xvididct.asm
++-
++-XVID MPEG-4 VIDEO CODEC
++-
++- Conversion from gcc syntax to x264asm syntax with modifications
++- by Christophe Gisquet <christophe.gisquet@gmail.com>
++-
++- ===========     SSE2 inverse discrete cosine transform     ===========
++-
++- Copyright(C) 2003 Pascal Massimino <skal@planet-d.net>
++-
++- Conversion to gcc syntax with modifications
++- by Alexander Strange <astrange@ithinksw.com>
++-
++- Originally from dct/x86_asm/fdct_sse2_skal.asm in Xvid.
++-
++- Vertical pass is an implementation of the scheme:
++-  Loeffler C., Ligtenberg A., and Moschytz C.S.:
++-  Practical Fast 1D DCT Algorithm with Eleven Multiplications,
++-  Proc. ICASSP 1989, 988-991.
++-
++- Horizontal pass is a double 4x4 vector/matrix multiplication,
++- (see also Intel's Application Note 922:
++-  http://developer.intel.com/vtune/cbts/strmsimd/922down.htm
++-  Copyright (C) 1999 Intel Corporation)
++-
++- More details at http://skal.planet-d.net/coding/dct.html
++-
++- =======     MMX and XMM forward discrete cosine transform     =======
++-
++- Copyright(C) 2001 Peter Ross <pross@xvid.org>
++-
++- Originally provided by Intel at AP-922
++- http://developer.intel.com/vtune/cbts/strmsimd/922down.htm
++- (See more app notes at http://developer.intel.com/vtune/cbts/strmsimd/appnotes.htm)
++- but in a limited edition.
++- New macro implements a column part for precise iDCT
++- The routine precision now satisfies IEEE standard 1180-1990.
++-
++- Copyright(C) 2000-2001 Peter Gubanov <peter@elecard.net.ru>
++- Rounding trick Copyright(C) 2000 Michel Lespinasse <walken@zoy.org>
++-
++- http://www.elecard.com/peter/idct.html
++- http://www.linuxvideo.org/mpeg2dec/
++-
++- These examples contain code fragments for first stage iDCT 8x8
++- (for rows) and first stage DCT 8x8 (for columns)
++-
++- conversion to gcc syntax by Michael Niedermayer
++-
++- ======================================================================
++-
++- This file is part of FFmpeg.
++-
++- FFmpeg is free software; you can redistribute it and/or
++- modify it under the terms of the GNU Lesser General Public
++- License as published by the Free Software Foundation; either
++- version 2.1 of the License, or (at your option) any later version.
++-
++- FFmpeg is distributed in the hope that it will be useful,
++- but WITHOUT ANY WARRANTY; without even the implied warranty of
++- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++- Lesser General Public License for more details.
++-
++- You should have received a copy of the GNU Lesser General Public License
++- along with FFmpeg; if not, write to the Free Software Foundation,
++- Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++-
++ ********************************************************************************
++ 
++ libavformat/oggparsetheora.c
++@@ -336,31 +182,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++ 
++ ********************************************************************************
++ 
++-libavutil/x86/x86inc.asm
++-
++-x86inc.asm: x264asm abstraction layer
++-
++- Copyright (C) 2005-2018 x264 project
++-
++- Authors: Loren Merritt <lorenm@u.washington.edu>
++-          Henrik Gramner <henrik@gramner.com>
++-          Anton Mitrofanov <BugMaster@narod.ru>
++-          Fiona Glaser <fiona@x264.com>
++-
++- Permission to use, copy, modify, and/or distribute this software for any
++- purpose with or without fee is hereby granted, provided that the above
++- copyright notice and this permission notice appear in all copies.
++-
++- THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++- WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++- MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++- ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++- WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++- ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++- OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++-
++-********************************************************************************
++-
++ libswresample/swresample.h
++ 
++ Copyright (C) 2011-2013 Michael Niedermayer (michaelni@gmx.at)
++diff --git a/chromium/scripts/build_ffmpeg.py b/chromium/scripts/build_ffmpeg.py
++index 5a60f416be..ebbb9e153a 100755
++--- a/chromium/scripts/build_ffmpeg.py
+++++ b/chromium/scripts/build_ffmpeg.py
++@@ -40,7 +40,7 @@ BRANDINGS = [
++ ARCH_MAP = {
++     'android': ['ia32', 'x64', 'arm-neon', 'arm64'],
++     'linux': [
++-        'ia32', 'x64', 'noasm-x64', 'arm', 'arm-neon', 'arm64'
+++        'ia32', 'x64', 'noasm-x64', 'arm', 'arm-neon', 'arm64', 'riscv64'
++     ],
++     'mac': ['x64', 'arm64'],
++     'win': ['ia32', 'x64', 'arm64'],
++@@ -142,6 +142,8 @@ def DetermineHostOsAndArch():
++     host_arch = 'mips64el'
++   elif platform.machine().startswith('arm'):
++     host_arch = 'arm'
+++  elif platform.machine() == 'riscv64':
+++    host_arch = 'riscv64'
++   else:
++     return None
++ 
++@@ -912,6 +914,13 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
++             '--extra-cflags=--target=mips64el-linux-gnuabi64',
++             '--extra-ldflags=--target=mips64el-linux-gnuabi64',
++         ])
+++    elif target_arch == 'riscv64':
+++      configure_flags['Common'].extend([
+++        '--arch=riscv64',
+++        '--enable-cross-compile',
+++        '--target-os=linux',
+++        '--sysroot=/home/rebecca.chang/chromium/src/build/linux/debian_sid_riscv64-sysroot',
+++      ])
++     else:
++       print(
++           'Error: Unknown target arch %r for target OS %r!' % (target_arch,
++@@ -937,7 +946,7 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
++     # typically be the system one, so explicitly configure use of Clang's
++     # ld.lld, to ensure that things like cross-compilation and LTO work.
++     # This does not work for ia32 and is always used on mac.
++-    if target_arch != 'ia32' and target_os != 'mac':
+++    if target_arch != 'ia32' and target_arch != 'riscv64' and target_os != 'mac':
++       configure_flags['Common'].append('--extra-ldflags=-fuse-ld=lld')
++ 
++   # Should be run on Mac, unless we're cross-compiling on Linux.
++diff --git a/chromium/scripts/copy_config.sh b/chromium/scripts/copy_config.sh
++index 0e5159d6f4..0c07bd2476 100755
++--- a/chromium/scripts/copy_config.sh
+++++ b/chromium/scripts/copy_config.sh
++@@ -10,7 +10,7 @@ for os in android linux linux-noasm mac win; do
++     # Copy config files for various architectures:
++     #   - ia32/x64 have config.asm, config.h
++     #   - arm/arm-neon have config.h
++-    for arch in arm arm-neon arm64 ia32 x64 mipsel mips64el; do
+++    for arch in arm arm-neon arm64 ia32 x64 mipsel mips64el riscv64; do
++       # Don't waste time on non-existent configs, if no config.h then skip.
++       [ ! -e "build.$arch.$os/$target/config.h" ] && continue
++       for f in config.h config.asm libavutil/avconfig.h libavutil/ffversion.h libavcodec/bsf_list.c libavcodec/codec_list.c libavcodec/parser_list.c libavformat/demuxer_list.c libavformat/muxer_list.c libavformat/protocol_list.c; do
++diff --git a/chromium/scripts/generate_gn.py b/chromium/scripts/generate_gn.py
++index cb0aaedcf6..8705f04f62 100755
++--- a/chromium/scripts/generate_gn.py
+++++ b/chromium/scripts/generate_gn.py
++@@ -78,7 +78,7 @@ _Attrs = ('ARCHITECTURE', 'TARGET', 'PLATFORM')
++ Attr = collections.namedtuple('Attr', _Attrs)(*_Attrs)
++ SUPPORT_MATRIX = {
++     Attr.ARCHITECTURE:
++-        set(['ia32', 'x64', 'arm', 'arm64', 'arm-neon']),
+++        set(['ia32', 'x64', 'arm', 'arm64', 'arm-neon', 'riscv64']),
++     Attr.TARGET:
++         set(['Chromium', 'Chrome', 'ChromeOS']),
++     Attr.PLATFORM:
++diff --git a/chromium/scripts/generate_gn_unittest.py b/chromium/scripts/generate_gn_unittest.py
++index 880a697da6..3e96924c7f 100755
++--- a/chromium/scripts/generate_gn_unittest.py
+++++ b/chromium/scripts/generate_gn_unittest.py
++@@ -323,6 +323,9 @@ class SourceSetUnittest(unittest.TestCase):
++     f = SourceSet(
++         set(['common', 'arm-neon', 'chrome', 'chromeos']),
++         set([SourceListCondition('arm-neon', 'ChromeOS', 'linux')]))
+++    g = SourceSet(
+++        set(['common']),
+++        set([SourceListCondition('riscv64', 'Chromium', 'linux')]))
++ 
++     expected = set()
++     expected.add(
++@@ -334,7 +337,8 @@ class SourceSetUnittest(unittest.TestCase):
++                 SourceListCondition('x64', 'Chromium', 'linux'),
++                 SourceListCondition('x64', 'Chrome', 'linux'),
++                 SourceListCondition('arm', 'Chromium', 'linux'),
++-                SourceListCondition('arm-neon', 'ChromeOS', 'linux')
+++                SourceListCondition('arm-neon', 'ChromeOS', 'linux'),
+++                SourceListCondition('riscv64', 'Chromium', 'linux')
++             ])))
++     expected.add(
++         SourceSet(
++@@ -362,7 +366,7 @@ class SourceSetUnittest(unittest.TestCase):
++             set(['arm-neon', 'chromeos']),
++             set([SourceListCondition('arm-neon', 'ChromeOS', 'linux')])))
++ 
++-    source_sets = gg.CreatePairwiseDisjointSets([a, b, c, d, e, f])
+++    source_sets = gg.CreatePairwiseDisjointSets([a, b, c, d, e, f, g])
++     self.assertEqualSourceSets(expected, set(source_sets))
++ 
++   def testReduceConditions(self):
++@@ -375,6 +379,7 @@ class SourceSetUnittest(unittest.TestCase):
++             SourceListCondition('arm', 'Chromium', 'linux'),
++             SourceListCondition('arm64', 'Chromium', 'linux'),
++             SourceListCondition('arm-neon', 'Chromium', 'linux'),
+++            SourceListCondition('riscv64', 'Chromium', 'linux'),
++         ]))
++     gg.ReduceConditionalLogic(a)
++ 
++diff --git a/ffmpeg_generated.gni b/ffmpeg_generated.gni
++index 7db1e45037..e838e27df8 100644
++--- a/ffmpeg_generated.gni
+++++ b/ffmpeg_generated.gni
++@@ -14,15 +14,12 @@ ffmpeg_asm_sources = []
++ 
++ use_linux_config = is_linux || is_chromeos || is_fuchsia
++ 
++-if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && current_cpu == "arm64") || (is_android && current_cpu == "x64") || (is_android && current_cpu == "x86") || (is_mac) || (is_win) || (use_linux_config)) {
+++if (use_linux_config && current_cpu == "riscv64") {
++   ffmpeg_c_sources += [
++     "libavcodec/ac3_channel_layout_tab.c",
++     "libavcodec/ac3_parser.c",
++     "libavcodec/adts_parser.c",
++     "libavcodec/allcodecs.c",
++-    "libavcodec/autorename_libavcodec_flacdsp.c",
++-    "libavcodec/autorename_libavcodec_mpegaudiodsp.c",
++-    "libavcodec/autorename_libavcodec_vorbisdsp.c",
++     "libavcodec/avcodec.c",
++     "libavcodec/avdct.c",
++     "libavcodec/avfft.c",
++@@ -47,7 +44,10 @@ if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && curre
++     "libavcodec/flac_parser.c",
++     "libavcodec/flacdata.c",
++     "libavcodec/flacdec.c",
+++    "libavcodec/flacdsp.c",
++     "libavcodec/golomb.c",
+++    "libavcodec/h264pred.c",
+++    "libavcodec/hpeldsp.c",
++     "libavcodec/imgconvert.c",
++     "libavcodec/jni.c",
++     "libavcodec/libopus.c",
++@@ -65,6 +65,7 @@ if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && curre
++     "libavcodec/mpegaudiodec_common.c",
++     "libavcodec/mpegaudiodec_fixed.c",
++     "libavcodec/mpegaudiodecheader.c",
+++    "libavcodec/mpegaudiodsp.c",
++     "libavcodec/mpegaudiodsp_data.c",
++     "libavcodec/mpegaudiodsp_fixed.c",
++     "libavcodec/mpegaudiodsp_float.c",
++@@ -86,10 +87,19 @@ if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && curre
++     "libavcodec/rdft.c",
++     "libavcodec/to_upper4.c",
++     "libavcodec/utils.c",
+++    "libavcodec/videodsp.c",
++     "libavcodec/vorbis.c",
++     "libavcodec/vorbis_data.c",
++     "libavcodec/vorbis_parser.c",
++     "libavcodec/vorbisdec.c",
+++    "libavcodec/vorbisdsp.c",
+++    "libavcodec/vp3.c",
+++    "libavcodec/vp3_parser.c",
+++    "libavcodec/vp3dsp.c",
+++    "libavcodec/vp56rac.c",
+++    "libavcodec/vp8.c",
+++    "libavcodec/vp8_parser.c",
+++    "libavcodec/vp8dsp.c",
++     "libavcodec/vp9_parser.c",
++     "libavcodec/xiph.c",
++     "libavformat/allformats.c",
++@@ -138,11 +148,6 @@ if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && curre
++     "libavformat/wavdec.c",
++     "libavutil/aes.c",
++     "libavutil/aes_ctr.c",
++-    "libavutil/autorename_libavutil_cpu.c",
++-    "libavutil/autorename_libavutil_fixed_dsp.c",
++-    "libavutil/autorename_libavutil_float_dsp.c",
++-    "libavutil/autorename_libavutil_imgutils.c",
++-    "libavutil/autorename_libavutil_tx_float.c",
++     "libavutil/autorename_libavutil_utils.c",
++     "libavutil/avsscanf.c",
++     "libavutil/avstring.c",
++@@ -152,6 +157,7 @@ if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && curre
++     "libavutil/camellia.c",
++     "libavutil/channel_layout.c",
++     "libavutil/color_utils.c",
+++    "libavutil/cpu.c",
++     "libavutil/crc.c",
++     "libavutil/detection_bbox.c",
++     "libavutil/dict.c",
++@@ -164,9 +170,12 @@ if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && curre
++     "libavutil/fifo.c",
++     "libavutil/file_open.c",
++     "libavutil/film_grain_params.c",
+++    "libavutil/fixed_dsp.c",
+++    "libavutil/float_dsp.c",
++     "libavutil/frame.c",
++     "libavutil/hdr_dynamic_metadata.c",
++     "libavutil/hwcontext.c",
+++    "libavutil/imgutils.c",
++     "libavutil/integer.c",
++     "libavutil/intmath.c",
++     "libavutil/lfg.c",
++@@ -195,27 +204,20 @@ if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && curre
++     "libavutil/twofish.c",
++     "libavutil/tx.c",
++     "libavutil/tx_double.c",
+++    "libavutil/tx_float.c",
++     "libavutil/tx_int32.c",
++     "libavutil/video_enc_params.c",
++   ]
++ }
++ 
++-if (use_linux_config && ffmpeg_branding == "ChromeOS") {
+++if (use_linux_config && current_cpu == "riscv64" && ffmpeg_branding == "ChromeOS") {
++   ffmpeg_c_sources += [
++     "libavcodec/acelp_filters.c",
++     "libavcodec/acelp_pitch_delay.c",
++     "libavcodec/acelp_vectors.c",
++     "libavcodec/amrnbdec.c",
++     "libavcodec/amrwbdec.c",
++-    "libavcodec/autorename_libavcodec_blockdsp.c",
++-    "libavcodec/autorename_libavcodec_idctdsp.c",
++-    "libavcodec/autorename_libavcodec_me_cmp.c",
++-    "libavcodec/autorename_libavcodec_mpegvideo.c",
++-    "libavcodec/autorename_libavcodec_mpegvideodsp.c",
++-    "libavcodec/autorename_libavcodec_pixblockdsp.c",
++-    "libavcodec/autorename_libavcodec_qpeldsp.c",
++-    "libavcodec/autorename_libavcodec_simple_idct.c",
++-    "libavcodec/autorename_libavcodec_xvididct.c",
+++    "libavcodec/blockdsp.c",
++     "libavcodec/celp_filters.c",
++     "libavcodec/celp_math.c",
++     "libavcodec/error_resilience.c",
++@@ -229,32 +231,50 @@ if (use_linux_config && ffmpeg_branding == "ChromeOS") {
++     "libavcodec/h263data.c",
++     "libavcodec/h263dec.c",
++     "libavcodec/h263dsp.c",
+++    "libavcodec/idctdsp.c",
++     "libavcodec/ituh263dec.c",
++     "libavcodec/jfdctfst.c",
++     "libavcodec/jfdctint.c",
++     "libavcodec/jrevdct.c",
++     "libavcodec/lsp.c",
+++    "libavcodec/me_cmp.c",
++     "libavcodec/mpeg4video.c",
++     "libavcodec/mpeg4video_parser.c",
++     "libavcodec/mpeg4videodec.c",
++     "libavcodec/mpeg_er.c",
++     "libavcodec/mpegpicture.c",
++     "libavcodec/mpegutils.c",
+++    "libavcodec/mpegvideo.c",
++     "libavcodec/mpegvideo_dec.c",
++     "libavcodec/mpegvideo_motion.c",
++     "libavcodec/mpegvideodata.c",
+++    "libavcodec/mpegvideodsp.c",
++     "libavcodec/msgsmdec.c",
+++    "libavcodec/pixblockdsp.c",
+++    "libavcodec/qpeldsp.c",
++     "libavcodec/rl.c",
+++    "libavcodec/simple_idct.c",
++     "libavcodec/tiff_common.c",
+++    "libavcodec/xvididct.c",
++     "libavformat/amr.c",
++     "libavformat/avidec.c",
++   ]
++ }
++ 
++-if ((is_mac && ffmpeg_branding == "Chrome") || (is_win && ffmpeg_branding == "Chrome") || (use_linux_config && ffmpeg_branding == "Chrome") || (use_linux_config && ffmpeg_branding == "ChromeOS")) {
+++if ((use_linux_config && current_cpu == "riscv64" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "riscv64" && ffmpeg_branding == "ChromeOS")) {
++   ffmpeg_c_sources += [
+++    "libavcodec/aac_ac3_parser.c",
+++    "libavcodec/aac_parser.c",
+++    "libavcodec/aacdec.c",
+++    "libavcodec/aacps_common.c",
+++    "libavcodec/aacps_float.c",
+++    "libavcodec/aacpsdsp_float.c",
+++    "libavcodec/aacsbr.c",
+++    "libavcodec/aactab.c",
+++    "libavcodec/adts_header.c",
++     "libavcodec/atsc_a53.c",
++     "libavcodec/cabac.c",
+++    "libavcodec/cbrt_data.c",
++     "libavcodec/h2645_parse.c",
++     "libavcodec/h264_cabac.c",
++     "libavcodec/h264_cavlc.c",
++@@ -275,381 +295,14 @@ if ((is_mac && ffmpeg_branding == "Chrome") || (is_win && ffmpeg_branding == "Ch
++     "libavcodec/h264idct.c",
++     "libavcodec/h264qpel.c",
++     "libavcodec/h274.c",
++-    "libavcodec/startcode.c",
++-  ]
++-}
++-
++-if ((use_linux_config && current_cpu == "x64" && ffmpeg_branding == "ChromeOS") || (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/x86/autorename_libavcodec_x86_mpegvideo.c",
++-    "libavcodec/x86/blockdsp_init.c",
++-    "libavcodec/x86/fdct.c",
++-    "libavcodec/x86/fdctdsp_init.c",
++-    "libavcodec/x86/h263dsp_init.c",
++-    "libavcodec/x86/idctdsp_init.c",
++-    "libavcodec/x86/me_cmp_init.c",
++-    "libavcodec/x86/mpegvideodsp.c",
++-    "libavcodec/x86/pixblockdsp_init.c",
++-    "libavcodec/x86/qpeldsp_init.c",
++-    "libavcodec/x86/xvididct_init.c",
++-  ]
++-  ffmpeg_asm_sources += [
++-    "libavcodec/x86/blockdsp.asm",
++-    "libavcodec/x86/h263_loopfilter.asm",
++-    "libavcodec/x86/idctdsp.asm",
++-    "libavcodec/x86/me_cmp.asm",
++-    "libavcodec/x86/pixblockdsp.asm",
++-    "libavcodec/x86/qpeldsp.asm",
++-    "libavcodec/x86/simple_idct.asm",
++-    "libavcodec/x86/simple_idct10.asm",
++-    "libavcodec/x86/xvididct.asm",
++-  ]
++-}
++-
++-if ((current_cpu == "arm64" && ffmpeg_branding == "Chrome") || (current_cpu == "x64" && ffmpeg_branding == "Chrome") || (is_android && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "Chrome") || (is_android && current_cpu == "x86" && ffmpeg_branding == "Chrome") || (is_mac && ffmpeg_branding == "Chrome") || (is_win && ffmpeg_branding == "Chrome") || (use_linux_config && ffmpeg_branding == "Chrome") || (use_linux_config && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/aac_ac3_parser.c",
++-    "libavcodec/aac_parser.c",
++-    "libavcodec/aacdec.c",
++-    "libavcodec/aacps_common.c",
++-    "libavcodec/aacps_float.c",
++-    "libavcodec/aacpsdsp_float.c",
++-    "libavcodec/aacsbr.c",
++-    "libavcodec/aactab.c",
++-    "libavcodec/adts_header.c",
++-    "libavcodec/autorename_libavcodec_mdct15.c",
++-    "libavcodec/autorename_libavcodec_sbrdsp.c",
++-    "libavcodec/cbrt_data.c",
++     "libavcodec/kbdwin.c",
+++    "libavcodec/mdct15.c",
+++    "libavcodec/sbrdsp.c",
++     "libavcodec/sinewin.c",
+++    "libavcodec/startcode.c",
++     "libavformat/apetag.c",
++     "libavformat/autorename_libavformat_aacdec.c",
++     "libavformat/img2.c",
++   ]
++ }
++ 
++-if ((use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "ChromeOS") || (use_linux_config && current_cpu == "arm" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/arm/blockdsp_init_arm.c",
++-    "libavcodec/arm/idctdsp_init_arm.c",
++-    "libavcodec/arm/idctdsp_init_armv5te.c",
++-    "libavcodec/arm/idctdsp_init_armv6.c",
++-    "libavcodec/arm/me_cmp_init_arm.c",
++-    "libavcodec/arm/mpegvideo_arm.c",
++-    "libavcodec/arm/mpegvideo_armv5te.c",
++-    "libavcodec/arm/pixblockdsp_init_arm.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/idctdsp_arm.S",
++-    "libavcodec/arm/idctdsp_armv6.S",
++-    "libavcodec/arm/jrevdct_arm.S",
++-    "libavcodec/arm/me_cmp_armv6.S",
++-    "libavcodec/arm/mpegvideo_armv5te_s.S",
++-    "libavcodec/arm/pixblockdsp_armv6.S",
++-    "libavcodec/arm/simple_idct_arm.S",
++-    "libavcodec/arm/simple_idct_armv5te.S",
++-    "libavcodec/arm/simple_idct_armv6.S",
++-  ]
++-}
++-
++-if ((is_mac && current_cpu == "x64") || (is_win && current_cpu == "x64") || (is_win && current_cpu == "x86") || (use_linux_config && current_cpu == "x64") || (use_linux_config && current_cpu == "x86")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/x86/autorename_libavcodec_x86_videodsp_init.c",
++-    "libavcodec/x86/h264_intrapred_init.c",
++-    "libavcodec/x86/hpeldsp_init.c",
++-    "libavcodec/x86/hpeldsp_vp3_init.c",
++-    "libavcodec/x86/vp3dsp_init.c",
++-    "libavcodec/x86/vp8dsp_init.c",
++-  ]
++-  ffmpeg_asm_sources += [
++-    "libavcodec/x86/autorename_libavcodec_x86_hpeldsp.asm",
++-    "libavcodec/x86/autorename_libavcodec_x86_videodsp.asm",
++-    "libavcodec/x86/autorename_libavcodec_x86_vp3dsp.asm",
++-    "libavcodec/x86/autorename_libavcodec_x86_vp8dsp.asm",
++-    "libavcodec/x86/fpel.asm",
++-    "libavcodec/x86/h264_intrapred.asm",
++-    "libavcodec/x86/h264_intrapred_10bit.asm",
++-    "libavcodec/x86/hpeldsp_vp3.asm",
++-    "libavcodec/x86/vp8dsp_loopfilter.asm",
++-  ]
++-}
++-
++-if ((is_mac && current_cpu == "x64" && ffmpeg_branding == "Chrome") || (is_win && current_cpu == "x64" && ffmpeg_branding == "Chrome") || (is_win && current_cpu == "x86" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "x64" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "x64" && ffmpeg_branding == "ChromeOS") || (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/x86/h264_qpel.c",
++-    "libavcodec/x86/h264chroma_init.c",
++-    "libavcodec/x86/h264dsp_init.c",
++-  ]
++-  ffmpeg_asm_sources += [
++-    "libavcodec/x86/h264_chromamc.asm",
++-    "libavcodec/x86/h264_chromamc_10bit.asm",
++-    "libavcodec/x86/h264_deblock.asm",
++-    "libavcodec/x86/h264_deblock_10bit.asm",
++-    "libavcodec/x86/h264_idct.asm",
++-    "libavcodec/x86/h264_idct_10bit.asm",
++-    "libavcodec/x86/h264_qpel_10bit.asm",
++-    "libavcodec/x86/h264_qpel_8bit.asm",
++-    "libavcodec/x86/h264_weight.asm",
++-    "libavcodec/x86/h264_weight_10bit.asm",
++-    "libavcodec/x86/qpel.asm",
++-  ]
++-}
++-
++-if ((is_android && current_cpu == "arm" && arm_use_neon) || (use_linux_config && current_cpu == "arm" && arm_use_neon) || (use_linux_config && current_cpu == "arm")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/arm/fft_init_arm.c",
++-    "libavcodec/arm/flacdsp_init_arm.c",
++-    "libavcodec/arm/mpegaudiodsp_init_arm.c",
++-    "libavcodec/arm/rdft_init_arm.c",
++-    "libavcodec/arm/vorbisdsp_init_arm.c",
++-    "libavutil/arm/autorename_libavutil_arm_cpu.c",
++-    "libavutil/arm/float_dsp_init_arm.c",
++-    "libavutil/arm/float_dsp_init_vfp.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/fft_vfp.S",
++-    "libavcodec/arm/flacdsp_arm.S",
++-    "libavcodec/arm/mdct_vfp.S",
++-    "libavcodec/arm/mpegaudiodsp_fixed_armv6.S",
++-    "libavutil/arm/float_dsp_vfp.S",
++-  ]
++-}
++-
++-if ((use_linux_config && current_cpu == "arm" && arm_use_neon) || (use_linux_config && current_cpu == "arm")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/arm/h264pred_init_arm.c",
++-    "libavcodec/arm/hpeldsp_init_arm.c",
++-    "libavcodec/arm/hpeldsp_init_armv6.c",
++-    "libavcodec/arm/videodsp_init_arm.c",
++-    "libavcodec/arm/videodsp_init_armv5te.c",
++-    "libavcodec/arm/vp3dsp_init_arm.c",
++-    "libavcodec/arm/vp8dsp_init_arm.c",
++-    "libavcodec/arm/vp8dsp_init_armv6.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/hpeldsp_arm.S",
++-    "libavcodec/arm/hpeldsp_armv6.S",
++-    "libavcodec/arm/videodsp_armv5te.S",
++-    "libavcodec/arm/vp8_armv6.S",
++-    "libavcodec/arm/vp8dsp_armv6.S",
++-  ]
++-}
++-
++-if ((is_android && current_cpu == "x64") || (is_android && current_cpu == "x86") || (is_mac && current_cpu == "x64") || (is_win && current_cpu == "x64") || (is_win && current_cpu == "x86") || (use_linux_config && current_cpu == "x64") || (use_linux_config && current_cpu == "x86")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/x86/autorename_libavcodec_x86_vorbisdsp_init.c",
++-    "libavcodec/x86/constants.c",
++-    "libavcodec/x86/dct_init.c",
++-    "libavcodec/x86/fft_init.c",
++-    "libavcodec/x86/flacdsp_init.c",
++-    "libavcodec/x86/mpegaudiodsp.c",
++-    "libavutil/x86/autorename_libavutil_x86_cpu.c",
++-    "libavutil/x86/autorename_libavutil_x86_float_dsp_init.c",
++-    "libavutil/x86/fixed_dsp_init.c",
++-    "libavutil/x86/imgutils_init.c",
++-    "libavutil/x86/lls_init.c",
++-    "libavutil/x86/tx_float_init.c",
++-  ]
++-}
++-
++-if ((is_android && current_cpu == "x64") || (is_mac && current_cpu == "x64") || (is_win && current_cpu == "x64") || (is_win && current_cpu == "x86") || (use_linux_config && current_cpu == "x64") || (use_linux_config && current_cpu == "x86")) {
++-  ffmpeg_asm_sources += [
++-    "libavcodec/x86/dct32.asm",
++-    "libavcodec/x86/fft.asm",
++-    "libavcodec/x86/flacdsp.asm",
++-    "libavcodec/x86/imdct36.asm",
++-    "libavcodec/x86/vorbisdsp.asm",
++-    "libavutil/x86/cpuid.asm",
++-    "libavutil/x86/fixed_dsp.asm",
++-    "libavutil/x86/float_dsp.asm",
++-    "libavutil/x86/imgutils.asm",
++-    "libavutil/x86/lls.asm",
++-    "libavutil/x86/tx_float.asm",
++-  ]
++-}
++-
++-if ((is_android && current_cpu == "arm64") || (is_mac && current_cpu == "arm64") || (is_win && current_cpu == "arm64") || (use_linux_config && current_cpu == "arm64")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/aarch64/fft_init_aarch64.c",
++-    "libavcodec/aarch64/mpegaudiodsp_init.c",
++-    "libavcodec/aarch64/vorbisdsp_init.c",
++-    "libavutil/aarch64/cpu.c",
++-    "libavutil/aarch64/float_dsp_init.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_fft_neon.S",
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_mdct_neon.S",
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_vorbisdsp_neon.S",
++-    "libavcodec/aarch64/mpegaudiodsp_neon.S",
++-    "libavutil/aarch64/autorename_libavutil_aarch64_float_dsp_neon.S",
++-  ]
++-}
++-
++-if ((is_mac) || (is_win) || (use_linux_config)) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/autorename_libavcodec_videodsp.c",
++-    "libavcodec/h264pred.c",
++-    "libavcodec/hpeldsp.c",
++-    "libavcodec/vp3.c",
++-    "libavcodec/vp3_parser.c",
++-    "libavcodec/vp3dsp.c",
++-    "libavcodec/vp56rac.c",
++-    "libavcodec/vp8.c",
++-    "libavcodec/vp8_parser.c",
++-    "libavcodec/vp8dsp.c",
++-  ]
++-}
++-
++-if ((is_mac && current_cpu == "arm64") || (is_win && current_cpu == "arm64") || (use_linux_config && current_cpu == "arm64")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/aarch64/h264pred_init.c",
++-    "libavcodec/aarch64/hpeldsp_init_aarch64.c",
++-    "libavcodec/aarch64/videodsp_init.c",
++-    "libavcodec/aarch64/vp8dsp_init_aarch64.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_h264pred_neon.S",
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_hpeldsp_neon.S",
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_vp8dsp_neon.S",
++-    "libavcodec/aarch64/videodsp.S",
++-  ]
++-}
++-
++-if ((is_mac && current_cpu == "arm64" && ffmpeg_branding == "Chrome") || (is_win && current_cpu == "arm64" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm64" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm64" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/aarch64/h264chroma_init_aarch64.c",
++-    "libavcodec/aarch64/h264dsp_init_aarch64.c",
++-    "libavcodec/aarch64/h264qpel_init_aarch64.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_h264cmc_neon.S",
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_h264dsp_neon.S",
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_h264idct_neon.S",
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_h264qpel_neon.S",
++-  ]
++-}
++-
++-if (use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "ChromeOS") {
++-  ffmpeg_c_sources += [
++-    "libavcodec/arm/blockdsp_init_neon.c",
++-    "libavcodec/arm/idctdsp_init_neon.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/autorename_libavcodec_arm_pixblockdsp_neon.S",
++-    "libavcodec/arm/autorename_libavcodec_arm_simple_idct_neon.S",
++-    "libavcodec/arm/blockdsp_neon.S",
++-    "libavcodec/arm/idctdsp_neon.S",
++-    "libavcodec/arm/mpegvideo_neon.S",
++-  ]
++-}
++-
++-if ((is_android && current_cpu == "arm" && arm_use_neon) || (use_linux_config && current_cpu == "arm" && arm_use_neon)) {
++-  ffmpeg_c_sources += [
++-    "libavutil/arm/float_dsp_init_neon.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/fft_neon.S",
++-    "libavcodec/arm/mdct_neon.S",
++-    "libavcodec/arm/rdft_neon.S",
++-    "libavcodec/arm/vorbisdsp_neon.S",
++-    "libavutil/arm/float_dsp_neon.S",
++-  ]
++-}
++-
++-if (use_linux_config && current_cpu == "arm" && arm_use_neon) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/arm/hpeldsp_init_neon.c",
++-    "libavcodec/arm/vp8dsp_init_neon.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/h264pred_neon.S",
++-    "libavcodec/arm/hpeldsp_neon.S",
++-    "libavcodec/arm/vp3dsp_neon.S",
++-    "libavcodec/arm/vp8dsp_neon.S",
++-  ]
++-}
++-
++-if ((use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "ChromeOS") || (use_linux_config && current_cpu == "arm" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/arm/h264chroma_init_arm.c",
++-    "libavcodec/arm/h264dsp_init_arm.c",
++-    "libavcodec/arm/h264qpel_init_arm.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/startcode_armv6.S",
++-  ]
++-}
++-
++-if ((use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/h264cmc_neon.S",
++-    "libavcodec/arm/h264dsp_neon.S",
++-    "libavcodec/arm/h264idct_neon.S",
++-    "libavcodec/arm/h264qpel_neon.S",
++-  ]
++-}
++-
++-if ((current_cpu == "arm64" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm64" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/aarch64/aacpsdsp_init_aarch64.c",
++-    "libavcodec/aarch64/sbrdsp_init_aarch64.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_aacpsdsp_neon.S",
++-    "libavcodec/aarch64/autorename_libavcodec_aarch64_sbrdsp_neon.S",
++-  ]
++-}
++-
++-if (use_linux_config && current_cpu == "arm64" && ffmpeg_branding == "ChromeOS") {
++-  ffmpeg_c_sources += [
++-    "libavcodec/aarch64/idctdsp_init_aarch64.c",
++-    "libavcodec/aarch64/pixblockdsp_init_aarch64.c",
++-  ]
++-  ffmpeg_gas_sources += [
++-    "libavcodec/aarch64/pixblockdsp_neon.S",
++-    "libavcodec/aarch64/simple_idct_neon.S",
++-  ]
++-}
++-
++-if ((current_cpu == "x64" && ffmpeg_branding == "Chrome") || (is_android && current_cpu == "x86" && ffmpeg_branding == "Chrome") || (is_win && current_cpu == "x86" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "x64" && ffmpeg_branding == "ChromeOS") || (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/x86/aacpsdsp_init.c",
++-    "libavcodec/x86/mdct15_init.c",
++-    "libavcodec/x86/sbrdsp_init.c",
++-  ]
++-}
++-
++-if ((current_cpu == "x64" && ffmpeg_branding == "Chrome") || (is_win && current_cpu == "x86" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "x64" && ffmpeg_branding == "ChromeOS") || (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_asm_sources += [
++-    "libavcodec/x86/aacpsdsp.asm",
++-    "libavcodec/x86/mdct15.asm",
++-    "libavcodec/x86/sbrdsp.asm",
++-  ]
++-}
++-
++-if ((is_android && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "ChromeOS") || (use_linux_config && current_cpu == "arm" && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/arm/aacpsdsp_init_arm.c",
++-    "libavcodec/arm/sbrdsp_init_arm.c",
++-  ]
++-}
++-
++-if ((is_android && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "Chrome") || (use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_gas_sources += [
++-    "libavcodec/arm/aacpsdsp_neon.S",
++-    "libavcodec/arm/sbrdsp_neon.S",
++-  ]
++-}
++-
++-if ((is_android && current_cpu == "arm" && arm_use_neon) || (is_android && current_cpu == "arm64") || (is_android && current_cpu == "x64") || (is_android && current_cpu == "x86")) {
++-  ffmpeg_c_sources += [
++-    "compat/strtod.c",
++-  ]
++-}
++-
++-if ((use_linux_config && current_cpu == "arm" && arm_use_neon && ffmpeg_branding == "ChromeOS") || (use_linux_config && current_cpu == "arm64" && ffmpeg_branding == "ChromeOS")) {
++-  ffmpeg_c_sources += [
++-    "libavcodec/neon/mpegvideo.c",
++-  ]
++-}
++-
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_aacpsdsp_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_aacpsdsp_neon.S
++deleted file mode 100644
++index 06fc13706d..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_aacpsdsp_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "aacpsdsp_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_fft_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_fft_neon.S
++deleted file mode 100644
++index 739b10d734..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_fft_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "fft_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264cmc_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_h264cmc_neon.S
++deleted file mode 100644
++index c79db8bbbc..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264cmc_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "h264cmc_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264dsp_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_h264dsp_neon.S
++deleted file mode 100644
++index 2dbf3ac9be..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264dsp_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "h264dsp_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264idct_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_h264idct_neon.S
++deleted file mode 100644
++index ac5f5e0633..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264idct_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "h264idct_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264pred_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_h264pred_neon.S
++deleted file mode 100644
++index c137cda781..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264pred_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "h264pred_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264qpel_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_h264qpel_neon.S
++deleted file mode 100644
++index 82d383fdda..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_h264qpel_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "h264qpel_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_hpeldsp_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_hpeldsp_neon.S
++deleted file mode 100644
++index 6b2a3aafbc..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_hpeldsp_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "hpeldsp_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_mdct_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_mdct_neon.S
++deleted file mode 100644
++index 12d6b19e02..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_mdct_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "mdct_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_sbrdsp_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_sbrdsp_neon.S
++deleted file mode 100644
++index 0020ac06ba..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_sbrdsp_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "sbrdsp_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_vorbisdsp_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_vorbisdsp_neon.S
++deleted file mode 100644
++index f0058644c0..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_vorbisdsp_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "vorbisdsp_neon.S"
++diff --git a/libavcodec/aarch64/autorename_libavcodec_aarch64_vp8dsp_neon.S b/libavcodec/aarch64/autorename_libavcodec_aarch64_vp8dsp_neon.S
++deleted file mode 100644
++index c0cd74095d..0000000000
++--- a/libavcodec/aarch64/autorename_libavcodec_aarch64_vp8dsp_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "vp8dsp_neon.S"
++diff --git a/libavcodec/arm/autorename_libavcodec_arm_pixblockdsp_neon.S b/libavcodec/arm/autorename_libavcodec_arm_pixblockdsp_neon.S
++deleted file mode 100644
++index e1d69f8a32..0000000000
++--- a/libavcodec/arm/autorename_libavcodec_arm_pixblockdsp_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "pixblockdsp_neon.S"
++diff --git a/libavcodec/arm/autorename_libavcodec_arm_simple_idct_neon.S b/libavcodec/arm/autorename_libavcodec_arm_simple_idct_neon.S
++deleted file mode 100644
++index 796796745c..0000000000
++--- a/libavcodec/arm/autorename_libavcodec_arm_simple_idct_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "simple_idct_neon.S"
++diff --git a/libavcodec/autorename_libavcodec_blockdsp.c b/libavcodec/autorename_libavcodec_blockdsp.c
++deleted file mode 100644
++index 60549b3c7d..0000000000
++--- a/libavcodec/autorename_libavcodec_blockdsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "blockdsp.c"
++diff --git a/libavcodec/autorename_libavcodec_flacdsp.c b/libavcodec/autorename_libavcodec_flacdsp.c
++deleted file mode 100644
++index c818953475..0000000000
++--- a/libavcodec/autorename_libavcodec_flacdsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "flacdsp.c"
++diff --git a/libavcodec/autorename_libavcodec_idctdsp.c b/libavcodec/autorename_libavcodec_idctdsp.c
++deleted file mode 100644
++index c747a9457a..0000000000
++--- a/libavcodec/autorename_libavcodec_idctdsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "idctdsp.c"
++diff --git a/libavcodec/autorename_libavcodec_mdct15.c b/libavcodec/autorename_libavcodec_mdct15.c
++deleted file mode 100644
++index 2142ae206c..0000000000
++--- a/libavcodec/autorename_libavcodec_mdct15.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "mdct15.c"
++diff --git a/libavcodec/autorename_libavcodec_me_cmp.c b/libavcodec/autorename_libavcodec_me_cmp.c
++deleted file mode 100644
++index 46db0f5dc9..0000000000
++--- a/libavcodec/autorename_libavcodec_me_cmp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "me_cmp.c"
++diff --git a/libavcodec/autorename_libavcodec_mpegaudiodsp.c b/libavcodec/autorename_libavcodec_mpegaudiodsp.c
++deleted file mode 100644
++index 43079e7f3d..0000000000
++--- a/libavcodec/autorename_libavcodec_mpegaudiodsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "mpegaudiodsp.c"
++diff --git a/libavcodec/autorename_libavcodec_mpegvideo.c b/libavcodec/autorename_libavcodec_mpegvideo.c
++deleted file mode 100644
++index 72be6b77ab..0000000000
++--- a/libavcodec/autorename_libavcodec_mpegvideo.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "mpegvideo.c"
++diff --git a/libavcodec/autorename_libavcodec_mpegvideodsp.c b/libavcodec/autorename_libavcodec_mpegvideodsp.c
++deleted file mode 100644
++index dc97fff74e..0000000000
++--- a/libavcodec/autorename_libavcodec_mpegvideodsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "mpegvideodsp.c"
++diff --git a/libavcodec/autorename_libavcodec_pixblockdsp.c b/libavcodec/autorename_libavcodec_pixblockdsp.c
++deleted file mode 100644
++index 09ae9940f1..0000000000
++--- a/libavcodec/autorename_libavcodec_pixblockdsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "pixblockdsp.c"
++diff --git a/libavcodec/autorename_libavcodec_qpeldsp.c b/libavcodec/autorename_libavcodec_qpeldsp.c
++deleted file mode 100644
++index 6a392b4d8e..0000000000
++--- a/libavcodec/autorename_libavcodec_qpeldsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "qpeldsp.c"
++diff --git a/libavcodec/autorename_libavcodec_sbrdsp.c b/libavcodec/autorename_libavcodec_sbrdsp.c
++deleted file mode 100644
++index 4edbd8788b..0000000000
++--- a/libavcodec/autorename_libavcodec_sbrdsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "sbrdsp.c"
++diff --git a/libavcodec/autorename_libavcodec_simple_idct.c b/libavcodec/autorename_libavcodec_simple_idct.c
++deleted file mode 100644
++index e06b988550..0000000000
++--- a/libavcodec/autorename_libavcodec_simple_idct.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "simple_idct.c"
++diff --git a/libavcodec/autorename_libavcodec_videodsp.c b/libavcodec/autorename_libavcodec_videodsp.c
++deleted file mode 100644
++index fbe1348a98..0000000000
++--- a/libavcodec/autorename_libavcodec_videodsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "videodsp.c"
++diff --git a/libavcodec/autorename_libavcodec_vorbisdsp.c b/libavcodec/autorename_libavcodec_vorbisdsp.c
++deleted file mode 100644
++index 1cf7818876..0000000000
++--- a/libavcodec/autorename_libavcodec_vorbisdsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "vorbisdsp.c"
++diff --git a/libavcodec/autorename_libavcodec_xvididct.c b/libavcodec/autorename_libavcodec_xvididct.c
++deleted file mode 100644
++index 9791b89d28..0000000000
++--- a/libavcodec/autorename_libavcodec_xvididct.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "xvididct.c"
++diff --git a/libavcodec/x86/autorename_libavcodec_x86_hpeldsp.asm b/libavcodec/x86/autorename_libavcodec_x86_hpeldsp.asm
++deleted file mode 100644
++index 258ec44b65..0000000000
++--- a/libavcodec/x86/autorename_libavcodec_x86_hpeldsp.asm
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-; File automatically generated. See crbug.com/495833.
++-%include "hpeldsp.asm"
++diff --git a/libavcodec/x86/autorename_libavcodec_x86_mpegvideo.c b/libavcodec/x86/autorename_libavcodec_x86_mpegvideo.c
++deleted file mode 100644
++index 72be6b77ab..0000000000
++--- a/libavcodec/x86/autorename_libavcodec_x86_mpegvideo.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "mpegvideo.c"
++diff --git a/libavcodec/x86/autorename_libavcodec_x86_videodsp.asm b/libavcodec/x86/autorename_libavcodec_x86_videodsp.asm
++deleted file mode 100644
++index 2c3627bf00..0000000000
++--- a/libavcodec/x86/autorename_libavcodec_x86_videodsp.asm
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-; File automatically generated. See crbug.com/495833.
++-%include "videodsp.asm"
++diff --git a/libavcodec/x86/autorename_libavcodec_x86_videodsp_init.c b/libavcodec/x86/autorename_libavcodec_x86_videodsp_init.c
++deleted file mode 100644
++index f49bf19a7b..0000000000
++--- a/libavcodec/x86/autorename_libavcodec_x86_videodsp_init.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "videodsp_init.c"
++diff --git a/libavcodec/x86/autorename_libavcodec_x86_vorbisdsp_init.c b/libavcodec/x86/autorename_libavcodec_x86_vorbisdsp_init.c
++deleted file mode 100644
++index e1b3dc8deb..0000000000
++--- a/libavcodec/x86/autorename_libavcodec_x86_vorbisdsp_init.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "vorbisdsp_init.c"
++diff --git a/libavcodec/x86/autorename_libavcodec_x86_vp3dsp.asm b/libavcodec/x86/autorename_libavcodec_x86_vp3dsp.asm
++deleted file mode 100644
++index 668c9745eb..0000000000
++--- a/libavcodec/x86/autorename_libavcodec_x86_vp3dsp.asm
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-; File automatically generated. See crbug.com/495833.
++-%include "vp3dsp.asm"
++diff --git a/libavcodec/x86/autorename_libavcodec_x86_vp8dsp.asm b/libavcodec/x86/autorename_libavcodec_x86_vp8dsp.asm
++deleted file mode 100644
++index f320f55b7f..0000000000
++--- a/libavcodec/x86/autorename_libavcodec_x86_vp8dsp.asm
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-; File automatically generated. See crbug.com/495833.
++-%include "vp8dsp.asm"
++diff --git a/libavutil/aarch64/autorename_libavutil_aarch64_float_dsp_neon.S b/libavutil/aarch64/autorename_libavutil_aarch64_float_dsp_neon.S
++deleted file mode 100644
++index 9edc48b82c..0000000000
++--- a/libavutil/aarch64/autorename_libavutil_aarch64_float_dsp_neon.S
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "float_dsp_neon.S"
++diff --git a/libavutil/arm/autorename_libavutil_arm_cpu.c b/libavutil/arm/autorename_libavutil_arm_cpu.c
++deleted file mode 100644
++index 3adbdc6f77..0000000000
++--- a/libavutil/arm/autorename_libavutil_arm_cpu.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "cpu.c"
++diff --git a/libavutil/autorename_libavutil_cpu.c b/libavutil/autorename_libavutil_cpu.c
++deleted file mode 100644
++index 3adbdc6f77..0000000000
++--- a/libavutil/autorename_libavutil_cpu.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "cpu.c"
++diff --git a/libavutil/autorename_libavutil_fixed_dsp.c b/libavutil/autorename_libavutil_fixed_dsp.c
++deleted file mode 100644
++index 5d4d92a91b..0000000000
++--- a/libavutil/autorename_libavutil_fixed_dsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "fixed_dsp.c"
++diff --git a/libavutil/autorename_libavutil_float_dsp.c b/libavutil/autorename_libavutil_float_dsp.c
++deleted file mode 100644
++index c189d0a0be..0000000000
++--- a/libavutil/autorename_libavutil_float_dsp.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "float_dsp.c"
++diff --git a/libavutil/autorename_libavutil_imgutils.c b/libavutil/autorename_libavutil_imgutils.c
++deleted file mode 100644
++index 4c2b8820a4..0000000000
++--- a/libavutil/autorename_libavutil_imgutils.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "imgutils.c"
++diff --git a/libavutil/autorename_libavutil_tx_float.c b/libavutil/autorename_libavutil_tx_float.c
++deleted file mode 100644
++index 7688264d9e..0000000000
++--- a/libavutil/autorename_libavutil_tx_float.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "tx_float.c"
++diff --git a/libavutil/x86/autorename_libavutil_x86_cpu.c b/libavutil/x86/autorename_libavutil_x86_cpu.c
++deleted file mode 100644
++index 3adbdc6f77..0000000000
++--- a/libavutil/x86/autorename_libavutil_x86_cpu.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "cpu.c"
++diff --git a/libavutil/x86/autorename_libavutil_x86_float_dsp_init.c b/libavutil/x86/autorename_libavutil_x86_float_dsp_init.c
++deleted file mode 100644
++index 2982badd57..0000000000
++--- a/libavutil/x86/autorename_libavutil_x86_float_dsp_init.c
+++++ /dev/null
++@@ -1,2 +0,0 @@
++-// File automatically generated. See crbug.com/495833.
++-#include "float_dsp_init.c"
+diff --git a/patchset/0005-third-party-pdfium.patch b/patchset/0005-third-party-pdfium.patch
+new file mode 100644
+index 0000000000000..4f60327fa92d5
+--- /dev/null
++++ b/patchset/0005-third-party-pdfium.patch
+@@ -0,0 +1,13 @@
++diff --git a/third_party/base/allocator/partition_allocator/spin_lock.cc b/third_party/base/allocator/partition_allocator/spin_lock.cc
++index 39d67b624..3377f0dd5 100644
++--- a/third_party/base/allocator/partition_allocator/spin_lock.cc
+++++ b/third_party/base/allocator/partition_allocator/spin_lock.cc
++@@ -45,6 +45,8 @@
++ #define YIELD_PROCESSOR __asm__ __volatile__("pause")
++ #elif defined(ARCH_CPU_PPC64_FAMILY)
++ #define YIELD_PROCESSOR __asm__ __volatile__("or 31,31,31")
+++#elif defined(ARCH_CPU_RISCV_FAMILY)
+++#define YIELD_PROCESSOR __asm__ __volatile__("FENCE")
++ #elif defined(ARCH_CPU_S390_FAMILY)
++ // just do nothing
++ #define YIELD_PROCESSOR ((void)0)
+diff --git a/patchset/0006-third-party-webrtc.patch b/patchset/0006-third-party-webrtc.patch
+new file mode 100644
+index 0000000000000..ab21a903d4444
+--- /dev/null
++++ b/patchset/0006-third-party-webrtc.patch
+@@ -0,0 +1,61 @@
++diff --git a/audio/utility/channel_mixer.cc b/audio/utility/channel_mixer.cc
++index 0f1e663873..8e66f90498 100644
++--- a/audio/utility/channel_mixer.cc
+++++ b/audio/utility/channel_mixer.cc
++@@ -8,6 +8,8 @@
++  *  be found in the AUTHORS file in the root of the source tree.
++  */
++ 
+++#include <cstring>
+++
++ #include "audio/utility/channel_mixer.h"
++ 
++ #include "audio/utility/channel_mixing_matrix.h"
++diff --git a/common_video/h264/sps_parser.h b/common_video/h264/sps_parser.h
++index da328b48b0..719da297a9 100644
++--- a/common_video/h264/sps_parser.h
+++++ b/common_video/h264/sps_parser.h
++@@ -11,6 +11,7 @@
++ #ifndef COMMON_VIDEO_H264_SPS_PARSER_H_
++ #define COMMON_VIDEO_H264_SPS_PARSER_H_
++ 
+++#include <cstdint>
++ #include "absl/types/optional.h"
++ #include "rtc_base/bitstream_reader.h"
++ 
++diff --git a/modules/include/module_common_types_public.h b/modules/include/module_common_types_public.h
++index 345e45ce12..8338a51462 100644
++--- a/modules/include/module_common_types_public.h
+++++ b/modules/include/module_common_types_public.h
++@@ -11,6 +11,7 @@
++ #ifndef MODULES_INCLUDE_MODULE_COMMON_TYPES_PUBLIC_H_
++ #define MODULES_INCLUDE_MODULE_COMMON_TYPES_PUBLIC_H_
++ 
+++#include <cstdint>
++ #include <limits>
++ 
++ #include "absl/types/optional.h"
++diff --git a/modules/video_coding/codecs/av1/BUILD.gn b/modules/video_coding/codecs/av1/BUILD.gn
++index 7106ca4809..f904c62041 100644
++--- a/modules/video_coding/codecs/av1/BUILD.gn
+++++ b/modules/video_coding/codecs/av1/BUILD.gn
++@@ -36,7 +36,6 @@ rtc_library("dav1d_decoder") {
++     "../../../../api/video_codecs:video_codecs_api",
++     "../../../../common_video",
++     "../../../../rtc_base:logging",
++-    "//third_party/dav1d",
++     "//third_party/libyuv",
++   ]
++   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
++diff --git a/modules/video_coding/utility/ivf_file_reader.cc b/modules/video_coding/utility/ivf_file_reader.cc
++index 85d1fa00d7..262b141b93 100644
++--- a/modules/video_coding/utility/ivf_file_reader.cc
+++++ b/modules/video_coding/utility/ivf_file_reader.cc
++@@ -10,6 +10,7 @@
++ 
++ #include "modules/video_coding/utility/ivf_file_reader.h"
++ 
+++#include <cstring>
++ #include <string>
++ #include <vector>
++ 
+diff --git a/patchset/0007-v8.patch b/patchset/0007-v8.patch
+new file mode 100644
+index 0000000000000..053a95f74409b
+--- /dev/null
++++ b/patchset/0007-v8.patch
+@@ -0,0 +1,144 @@
++diff --git a/gni/snapshot_toolchain.gni b/gni/snapshot_toolchain.gni
++index 39b196521c..d8c0807ace 100644
++--- a/gni/snapshot_toolchain.gni
+++++ b/gni/snapshot_toolchain.gni
++@@ -65,7 +65,8 @@ if (v8_snapshot_toolchain == "") {
++     # Trying to compile 32-bit arm on arm64. Good luck!
++     v8_snapshot_toolchain = current_toolchain
++   } else if (host_cpu == "x64" &&
++-             (v8_current_cpu == "mips" || v8_current_cpu == "mips64")) {
+++             (v8_current_cpu == "mips" || v8_current_cpu == "mips64" ||
+++              v8_current_cpu == "riscv64")) {
++     # We don't support snapshot generation for big-endian targets,
++     # therefore snapshots will need to be built using native mksnapshot
++     # in combination with qemu
++@@ -88,7 +89,7 @@ if (v8_snapshot_toolchain == "") {
++     if (v8_current_cpu == "x64" || v8_current_cpu == "x86") {
++       _cpus = v8_current_cpu
++     } else if (v8_current_cpu == "arm64" || v8_current_cpu == "mips64el" ||
++-               v8_current_cpu == "riscv64" || v8_current_cpu == "loong64") {
+++               v8_current_cpu == "loong64") {
++       if (is_win && v8_current_cpu == "arm64") {
++         # set _cpus to blank for Windows ARM64 so host_toolchain could be
++         # selected as snapshot toolchain later.
++diff --git a/src/execution/riscv64/simulator-riscv64.h b/src/execution/riscv64/simulator-riscv64.h
++index 4d2cd460c4..be9c5c8486 100644
++--- a/src/execution/riscv64/simulator-riscv64.h
+++++ b/src/execution/riscv64/simulator-riscv64.h
++@@ -681,58 +681,10 @@ class Simulator : public SimulatorBase {
++   // MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
++   template <uint64_t N>
++   struct type_usew_t;
++-  template <>
++-  struct type_usew_t<8> {
++-    using type = uint8_t;
++-  };
++-
++-  template <>
++-  struct type_usew_t<16> {
++-    using type = uint16_t;
++-  };
++-
++-  template <>
++-  struct type_usew_t<32> {
++-    using type = uint32_t;
++-  };
++-
++-  template <>
++-  struct type_usew_t<64> {
++-    using type = uint64_t;
++-  };
++ 
++-  template <>
++-  struct type_usew_t<128> {
++-    using type = __uint128_t;
++-  };
++   template <uint64_t N>
++   struct type_sew_t;
++ 
++-  template <>
++-  struct type_sew_t<8> {
++-    using type = int8_t;
++-  };
++-
++-  template <>
++-  struct type_sew_t<16> {
++-    using type = int16_t;
++-  };
++-
++-  template <>
++-  struct type_sew_t<32> {
++-    using type = int32_t;
++-  };
++-
++-  template <>
++-  struct type_sew_t<64> {
++-    using type = int64_t;
++-  };
++-
++-  template <>
++-  struct type_sew_t<128> {
++-    using type = __int128_t;
++-  };
++-
++ #define VV_PARAMS(x)                                                       \
++   type_sew_t<x>::type& vd =                                                \
++       Rvvelt<type_sew_t<x>::type>(rvv_vd_reg(), i, true);                  \
++@@ -1220,6 +1172,57 @@ class Simulator : public SimulatorBase {
++   LocalMonitor local_monitor_;
++   GlobalMonitor::LinkedAddress global_monitor_thread_;
++ };
+++
+++  template <>
+++  struct Simulator::type_usew_t<8> {
+++    using type = uint8_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_usew_t<16> {
+++    using type = uint16_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_usew_t<32> {
+++    using type = uint32_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_usew_t<64> {
+++    using type = uint64_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_usew_t<128> {
+++    using type = __uint128_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_sew_t<8> {
+++    using type = int8_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_sew_t<16> {
+++    using type = int16_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_sew_t<32> {
+++    using type = int32_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_sew_t<64> {
+++    using type = int64_t;
+++  };
+++
+++  template <>
+++  struct Simulator::type_sew_t<128> {
+++    using type = __int128_t;
+++  };
+++
++ }  // namespace internal
++ }  // namespace v8
++ 
+diff --git a/patchset/0008-third-party-swiftshader.patch b/patchset/0008-third-party-swiftshader.patch
+new file mode 100644
+index 0000000000000..d8168baf9c9a1
+--- /dev/null
++++ b/patchset/0008-third-party-swiftshader.patch
+@@ -0,0 +1,362 @@
++diff --git a/third_party/llvm-10.0/BUILD.gn b/third_party/llvm-10.0/BUILD.gn
++index 80bcf4113..eab1033fa 100644
++--- a/third_party/llvm-10.0/BUILD.gn
+++++ b/third_party/llvm-10.0/BUILD.gn
++@@ -86,6 +86,7 @@ llvm_include_dirs = [
++   "llvm/lib/Target/ARM/",
++   "llvm/lib/Target/Mips/",
++   "llvm/lib/Target/PowerPC/",
+++  "llvm/lib/Target/RISCV/",
++   "llvm/lib/Target/X86/",
++   "configs/common/include/",
++   "configs/common/lib/IR/",
++@@ -93,6 +94,7 @@ llvm_include_dirs = [
++   "configs/common/lib/Target/ARM/",
++   "configs/common/lib/Target/Mips/",
++   "configs/common/lib/Target/PowerPC/",
+++  "configs/common/lib/Target/RISCV/",
++   "configs/common/lib/Target/X86/",
++   "configs/common/lib/Transforms/InstCombine/",
++ ]
++@@ -153,6 +155,8 @@ swiftshader_llvm_source_set("swiftshader_llvm") {
++     deps += [ ":swiftshader_llvm_ppc" ]
++   } else if (current_cpu == "x86" || current_cpu == "x64") {
++     deps += [ ":swiftshader_llvm_x86" ]
+++  } else if (current_cpu == "riscv64") {
+++    deps += [ ":swiftshader_llvm_riscv64" ]
++   } else {
++     assert(false, "Unsupported current_cpu")
++   }
++@@ -1313,3 +1317,39 @@ swiftshader_llvm_source_set("swiftshader_llvm_x86") {
++     "llvm/lib/Target/X86/X86WinEHState.cpp",
++   ]
++ }
+++
+++swiftshader_llvm_source_set("swiftshader_llvm_riscv64") {
+++  sources = [
+++    "llvm/lib/Target/RISCV/AsmParser/RISCVAsmParser.cpp",
+++    "llvm/lib/Target/RISCV/Disassembler/RISCVDisassembler.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVAsmBackend.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVELFObjectWriter.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVELFStreamer.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVInstPrinter.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVMCAsmInfo.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVMCCodeEmitter.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVMCExpr.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVMCTargetDesc.cpp",
+++    "llvm/lib/Target/RISCV/MCTargetDesc/RISCVTargetStreamer.cpp",
+++    "llvm/lib/Target/RISCV/RISCVAsmPrinter.cpp",
+++    "llvm/lib/Target/RISCV/RISCVCallLowering.cpp",
+++    "llvm/lib/Target/RISCV/RISCVExpandPseudoInsts.cpp",
+++    "llvm/lib/Target/RISCV/RISCVFrameLowering.cpp",
+++    "llvm/lib/Target/RISCV/RISCVInstrInfo.cpp",
+++    "llvm/lib/Target/RISCV/RISCVInstructionSelector.cpp",
+++    "llvm/lib/Target/RISCV/RISCVISelDAGToDAG.cpp",
+++    "llvm/lib/Target/RISCV/RISCVISelLowering.cpp",
+++    "llvm/lib/Target/RISCV/RISCVLegalizerInfo.cpp",
+++    "llvm/lib/Target/RISCV/RISCVMCInstLower.cpp",
+++    "llvm/lib/Target/RISCV/RISCVMergeBaseOffset.cpp",
+++    "llvm/lib/Target/RISCV/RISCVRegisterBankInfo.cpp",
+++    "llvm/lib/Target/RISCV/RISCVRegisterInfo.cpp",
+++    "llvm/lib/Target/RISCV/RISCVSubtarget.cpp",
+++    "llvm/lib/Target/RISCV/RISCVTargetMachine.cpp",
+++    "llvm/lib/Target/RISCV/RISCVTargetObjectFile.cpp",
+++    "llvm/lib/Target/RISCV/RISCVTargetTransformInfo.cpp",
+++    "llvm/lib/Target/RISCV/TargetInfo/RISCVTargetInfo.cpp",
+++    "llvm/lib/Target/RISCV/Utils/RISCVBaseInfo.cpp",
+++    "llvm/lib/Target/RISCV/Utils/RISCVMatInt.cpp",
+++  ]
+++}
++diff --git a/third_party/llvm-10.0/CMakeLists.txt b/third_party/llvm-10.0/CMakeLists.txt
++index 4da792257..30e4d9026 100644
++--- a/third_party/llvm-10.0/CMakeLists.txt
+++++ b/third_party/llvm-10.0/CMakeLists.txt
++@@ -1126,6 +1126,40 @@ elseif(ARCH STREQUAL "ppc64le")
++         ${LLVM_DIR}/lib/Target/PowerPC/PPCVSXSwapRemoval.cpp
++         ${LLVM_DIR}/lib/Target/PowerPC/TargetInfo/PowerPCTargetInfo.cpp
++     )
+++elseif(ARCH STREQUAL "riscv64")
+++    list(APPEND LLVM_LIST
+++       ${LLVM_DIR}/lib/Target/RISCV/AsmParser/RISCVAsmParser.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/Disassembler/RISCVDisassembler.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVAsmBackend.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVELFObjectWriter.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVELFStreamer.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVInstPrinter.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVMCAsmInfo.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVMCCodeEmitter.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVMCExpr.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVMCTargetDesc.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/MCTargetDesc/RISCVTargetStreamer.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVAsmPrinter.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVCallLowering.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVExpandPseudoInsts.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVFrameLowering.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVInstrInfo.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVInstructionSelector.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVISelDAGToDAG.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVISelLowering.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVLegalizerInfo.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVMCInstLower.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVMergeBaseOffset.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVRegisterBankInfo.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVRegisterInfo.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVSubtarget.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVTargetMachine.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVTargetObjectFile.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/RISCVTargetTransformInfo.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/TargetInfo/RISCVTargetInfo.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/Utils/RISCVBaseInfo.cpp
+++       ${LLVM_DIR}/lib/Target/RISCV/Utils/RISCVMatInt.cpp
+++    )
++ endif()
++ 
++ if(REACTOR_EMIT_DEBUG_INFO)
++@@ -1157,6 +1191,7 @@ list(APPEND LLVM_INCLUDE_DIR
++     ${LLVM_DIR}/lib/Target/ARM
++     ${LLVM_DIR}/lib/Target/Mips
++     ${LLVM_DIR}/lib/Target/PowerPC
+++    ${LLVM_DIR}/lib/Target/RISCV
++     ${LLVM_DIR}/lib/Target/X86
++     ${LLVM_CONFIG_DIR}/common/include
++     ${LLVM_CONFIG_DIR}/common/lib/IR
++@@ -1164,6 +1199,7 @@ list(APPEND LLVM_INCLUDE_DIR
++     ${LLVM_CONFIG_DIR}/common/lib/Target/ARM
++     ${LLVM_CONFIG_DIR}/common/lib/Target/Mips
++     ${LLVM_CONFIG_DIR}/common/lib/Target/PowerPC
+++    ${LLVM_CONFIG_DIR}/common/lib/Target/RISCV
++     ${LLVM_CONFIG_DIR}/common/lib/Target/X86
++     ${LLVM_CONFIG_DIR}/common/lib/Transforms/InstCombine
++ )
++diff --git a/third_party/llvm-10.0/configs/linux/include/llvm/Config/AsmParsers.def b/third_party/llvm-10.0/configs/linux/include/llvm/Config/AsmParsers.def
++index bce0713c9..9893c66f6 100644
++--- a/third_party/llvm-10.0/configs/linux/include/llvm/Config/AsmParsers.def
+++++ b/third_party/llvm-10.0/configs/linux/include/llvm/Config/AsmParsers.def
++@@ -39,6 +39,9 @@ LLVM_ASM_PARSER(Mips)
++ #if defined(__powerpc64__)
++ LLVM_ASM_PARSER(PowerPC)
++ #endif
+++#if defined(__riscv)
+++LLVM_ASM_PARSER(RISCV)
+++#endif
++ 
++ 
++ #undef LLVM_ASM_PARSER
++diff --git a/third_party/llvm-10.0/configs/linux/include/llvm/Config/AsmPrinters.def b/third_party/llvm-10.0/configs/linux/include/llvm/Config/AsmPrinters.def
++index 112b1a422..523ee3b60 100644
++--- a/third_party/llvm-10.0/configs/linux/include/llvm/Config/AsmPrinters.def
+++++ b/third_party/llvm-10.0/configs/linux/include/llvm/Config/AsmPrinters.def
++@@ -39,6 +39,9 @@ LLVM_ASM_PRINTER(Mips)
++ #if defined(__powerpc64__)
++ LLVM_ASM_PRINTER(PowerPC)
++ #endif
+++#if defined(__riscv)
+++LLVM_ASM_PRINTER(RISCV)
+++#endif
++ 
++ 
++ #undef LLVM_ASM_PRINTER
++diff --git a/third_party/llvm-10.0/configs/linux/include/llvm/Config/Disassemblers.def b/third_party/llvm-10.0/configs/linux/include/llvm/Config/Disassemblers.def
++index 850983c4a..4f61495b1 100644
++--- a/third_party/llvm-10.0/configs/linux/include/llvm/Config/Disassemblers.def
+++++ b/third_party/llvm-10.0/configs/linux/include/llvm/Config/Disassemblers.def
++@@ -39,6 +39,9 @@ LLVM_DISASSEMBLER(Mips)
++ #if defined(__powerpc64__)
++ LLVM_DISASSEMBLER(PowerPC)
++ #endif
+++#if defined(__riscv)
+++LLVM_DISASSEMBLER(RISCV)
+++#endif
++ 
++ 
++ #undef LLVM_DISASSEMBLER
++diff --git a/third_party/llvm-10.0/configs/linux/include/llvm/Config/Targets.def b/third_party/llvm-10.0/configs/linux/include/llvm/Config/Targets.def
++index 103d30ab0..0e68b413d 100644
++--- a/third_party/llvm-10.0/configs/linux/include/llvm/Config/Targets.def
+++++ b/third_party/llvm-10.0/configs/linux/include/llvm/Config/Targets.def
++@@ -38,6 +38,9 @@ LLVM_TARGET(Mips)
++ #if defined(__powerpc64__)
++ LLVM_TARGET(PowerPC)
++ #endif
+++#if defined(__riscv)
+++LLVM_TARGET(RISCV)
+++#endif
++ 
++ 
++ #undef LLVM_TARGET
++diff --git a/third_party/llvm-10.0/configs/linux/include/llvm/Config/abi-breaking.h b/third_party/llvm-10.0/configs/linux/include/llvm/Config/abi-breaking.h
++index de8038352..fd32bf381 100644
++--- a/third_party/llvm-10.0/configs/linux/include/llvm/Config/abi-breaking.h
+++++ b/third_party/llvm-10.0/configs/linux/include/llvm/Config/abi-breaking.h
++@@ -13,11 +13,7 @@
++ #define LLVM_ABI_BREAKING_CHECKS_H
++ 
++ /* Define to enable checks that alter the LLVM C++ ABI */
++-#if defined(NDEBUG)
++ #define LLVM_ENABLE_ABI_BREAKING_CHECKS 0
++-#else
++-#define LLVM_ENABLE_ABI_BREAKING_CHECKS 1
++-#endif
++ 
++ /* Define to enable reverse iteration of unordered llvm containers */
++ #define LLVM_ENABLE_REVERSE_ITERATION 0
++diff --git a/third_party/llvm-10.0/configs/linux/include/llvm/Config/config.h b/third_party/llvm-10.0/configs/linux/include/llvm/Config/config.h
++index 24bdc67bb..efbb1f4c1 100644
++--- a/third_party/llvm-10.0/configs/linux/include/llvm/Config/config.h
+++++ b/third_party/llvm-10.0/configs/linux/include/llvm/Config/config.h
++@@ -4,9 +4,6 @@
++ /* Exported configuration */
++ #include "llvm/Config/llvm-config.h"
++ 
++-/* For detecting __GLIBC__ usage */
++-#include <features.h>
++-
++ /* Bug report URL. */
++ #define BUG_REPORT_URL "https://bugs.llvm.org/"
++ 
++@@ -130,12 +127,6 @@
++ /* Define to 1 if you have the `mallinfo' function. */
++ #define HAVE_MALLINFO 1
++ 
++-/* Some projects using SwiftShader bypass cmake (eg Chromium via gn) */
++-/* so we need to check glibc version for the new API to be safe */
++-#if defined(__GLIBC__) && __GLIBC_MINOR__ >= 33
++-#define HAVE_MALLINFO2 1
++-#endif
++-
++ /* Define to 1 if you have the <malloc/malloc.h> header file. */
++ /* #undef HAVE_MALLOC_MALLOC_H */
++ 
++@@ -317,6 +308,8 @@
++ #define LLVM_DEFAULT_TARGET_TRIPLE "mips64el-linux-gnuabi64"
++ #elif defined(__powerpc64__)
++ #define LLVM_DEFAULT_TARGET_TRIPLE "powerpc64le-unknown-linux-gnu"
+++#elif defined(__riscv)
+++#define LLVM_DEFAULT_TARGET_TRIPLE "riscv64-unknown-linux-gnu"
++ #else
++ #error "unknown architecture"
++ #endif
++diff --git a/third_party/llvm-10.0/configs/linux/include/llvm/Config/llvm-config.h b/third_party/llvm-10.0/configs/linux/include/llvm/Config/llvm-config.h
++index 6b267512b..44494f9aa 100644
++--- a/third_party/llvm-10.0/configs/linux/include/llvm/Config/llvm-config.h
+++++ b/third_party/llvm-10.0/configs/linux/include/llvm/Config/llvm-config.h
++@@ -42,6 +42,8 @@
++ #define LLVM_DEFAULT_TARGET_TRIPLE "mips64el-linux-gnuabi64"
++ #elif defined(__powerpc64__)
++ #define LLVM_DEFAULT_TARGET_TRIPLE "powerpc64le-unknown-linux-gnu"
+++#elif defined(__riscv)
+++#define LLVM_DEFAULT_TARGET_TRIPLE "riscv64-unknown-linux-gnu"
++ #else
++ #error "unknown architecture"
++ #endif
++@@ -67,6 +69,8 @@
++ #define LLVM_HOST_TRIPLE "mips64el-linux-gnuabi64"
++ #elif defined(__powerpc64__)
++ #define LLVM_HOST_TRIPLE "powerpc64le-unknown-linux-gnu"
+++#elif defined(__riscv)
+++#define LLVM_HOST_TRIPLE "riscv64-unknown-linux-gnu"
++ #else
++ #error "unknown architecture"
++ #endif
++@@ -82,6 +86,8 @@
++ #define LLVM_NATIVE_ARCH Mips
++ #elif defined(__powerpc64__)
++ #define LLVM_NATIVE_ARCH PowerPC
+++#elif defined(__riscv)
+++#define LLVM_NATIVE_ARCH RISCV
++ #else
++ #error "unknown architecture"
++ #endif
++@@ -97,6 +103,8 @@
++ #define LLVM_NATIVE_ASMPARSER LLVMInitializeMipsAsmParser
++ #elif defined(__powerpc64__)
++ #define LLVM_NATIVE_ASMPARSER LLVMInitializePowerPCAsmParser
+++#elif defined(__riscv)
+++#define LLVM_NATIVE_ASMPARSER LLVMInitializeRISCVAsmParser
++ #else
++ #error "unknown architecture"
++ #endif
++@@ -112,6 +120,8 @@
++ #define LLVM_NATIVE_ASMPRINTER LLVMInitializeMipsAsmPrinter
++ #elif defined(__powerpc64__)
++ #define LLVM_NATIVE_ASMPRINTER LLVMInitializePowerPCAsmPrinter
+++#elif defined(__riscv)
+++#define LLVM_NATIVE_ASMPRINTER LLVMInitializeRISCVAsmPrinter
++ #else
++ #error "unknown architecture"
++ #endif
++@@ -127,6 +137,8 @@
++ #define LLVM_NATIVE_DISASSEMBLER LLVMInitializeMipsDisassembler
++ #elif defined(__powerpc64__)
++ #define LLVM_NATIVE_DISASSEMBLER LLVMInitializePowerPCDisassembler
+++#elif defined(__riscv)
+++#define LLVM_NATIVE_DISASSEMBLER LLVMInitializeRISCVDisassembler
++ #else
++ #error "unknown architecture"
++ #endif
++@@ -142,6 +154,8 @@
++ #define LLVM_NATIVE_TARGET LLVMInitializeMipsTarget
++ #elif defined(__powerpc64__)
++ #define LLVM_NATIVE_TARGET LLVMInitializePowerPCTarget
+++#elif defined(__riscv)
+++#define LLVM_NATIVE_TARGET LLVMInitializeRISCVTarget
++ #else
++ #error "unknown architecture"
++ #endif
++@@ -157,6 +171,8 @@
++ #define LLVM_NATIVE_TARGETINFO LLVMInitializeMipsTargetInfo
++ #elif defined(__powerpc64__)
++ #define LLVM_NATIVE_TARGETINFO LLVMInitializePowerPCTargetInfo
+++#elif defined(__riscv)
+++#define LLVM_NATIVE_TARGETINFO LLVMInitializeRISCVTargetInfo
++ #else
++ #error "unknown architecture"
++ #endif
++@@ -172,6 +188,8 @@
++ #define LLVM_NATIVE_TARGETMC LLVMInitializeMipsTargetMC
++ #elif defined(__powerpc64__)
++ #define LLVM_NATIVE_TARGETMC LLVMInitializePowerPCTargetMC
+++#elif defined(__riscv)
+++#define LLVM_NATIVE_TARGETMC LLVMInitializeRISCVTargetMC
++ #else
++ #error "unknown architecture"
++ #endif
++diff --git a/third_party/llvm-10.0/scripts/update.py b/third_party/llvm-10.0/scripts/update.py
++old mode 100644
++new mode 100755
++index d25eecf03..64a9f4886
++--- a/third_party/llvm-10.0/scripts/update.py
+++++ b/third_party/llvm-10.0/scripts/update.py
++@@ -46,6 +46,7 @@ LLVM_TARGETS = [
++     ('X86', ('__i386__', '__x86_64__')),
++     ('Mips', ('__mips__',)),
++     ('PowerPC', ('__powerpc64__',)),
+++    ('RISCV', ('__riscv')),
++ ]
++ 
++ # Per-platform arches
++@@ -64,6 +65,7 @@ LLVM_TRIPLES = {
++         ('__mips__', 'mipsel-linux-gnu'),
++         ('__mips64', 'mips64el-linux-gnuabi64'),
++         ('__powerpc64__', 'powerpc64le-unknown-linux-gnu'),
+++        ('__riscv', 'riscv64-unknown-linux-gnu'),
++     ],
++     'darwin': [
++         ('__x86_64__', 'x86_64-apple-darwin'),
++diff --git a/third_party/marl/BUILD.gn b/third_party/marl/BUILD.gn
++index e1e29b1d5..fb0e8f764 100644
++--- a/third_party/marl/BUILD.gn
+++++ b/third_party/marl/BUILD.gn
++@@ -92,6 +92,12 @@ swiftshader_source_set("Marl") {
++         "src/osfiber_asm_x86.h",
++         "src/osfiber_asm_x86.S",
++       ]
+++    } else if (current_cpu == "riscv64") {
+++      sources += [
+++        "src/osfiber_rv64.c",
+++        "src/osfiber_asm_rv64.h",
+++        "src/osfiber_asm_rv64.S",
+++      ]
++     } else {
++       assert(false, "Unhandled value for current-cpu=" + current_cpu)
++     }
+diff --git a/patchset/0009-third-party-libjxl-src.patch b/patchset/0009-third-party-libjxl-src.patch
+new file mode 100644
+index 0000000000000..d1dd695545435
+--- /dev/null
++++ b/patchset/0009-third-party-libjxl-src.patch
+@@ -0,0 +1,17 @@
++diff --git a/lib/jxl/base/arch_macros.h b/lib/jxl/base/arch_macros.h
++index a983019..fc5e9e0 100644
++--- a/lib/jxl/base/arch_macros.h
+++++ b/lib/jxl/base/arch_macros.h
++@@ -28,6 +28,12 @@ namespace jxl {
++ #define JXL_ARCH_ARM 0
++ #endif
++ 
+++#if defined(__riscv)
+++#define JXL_ARCH_RISCV64 1
+++#else
+++#define JXL_ARCH_RISCV64 0
+++#endif
+++
++ }  // namespace jxl
++ 
++ #endif  // LIB_JXL_BASE_ARCH_MACROS_H_
+-- 
+2.25.1
+

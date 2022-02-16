@@ -1,0 +1,31 @@
+From fcb22bdfa5ee16fd6c997e55f7679a334a979cc8 Mon Sep 17 00:00:00 2001
+From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+Date: Fri, 14 Jan 2022 02:40:23 +0000
+Subject: [PATCH 10/27] BUILD.gn: disable printing unittests
+
+Depends on cups-config in sysroot.
+Currently sysroot does not include cups-config.
+
+Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+---
+ BUILD.gn | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 9cd2ebb94ec78..22257ece051c0 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -284,10 +284,6 @@ group("gn_all") {
+ 
+   deps += root_extra_deps
+ 
+-  if (enable_basic_printing) {
+-    deps += [ "//printing:printing_unittests" ]
+-  }
+-
+   if (enable_extensions) {
+     deps += [
+       "//extensions:extensions_browsertests",
+-- 
+2.25.1
+

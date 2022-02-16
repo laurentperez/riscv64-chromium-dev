@@ -1,0 +1,25 @@
+From c0e626dbc2ccc2b4cc1bc5ebf642364e2dcd46af Mon Sep 17 00:00:00 2001
+From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+Date: Thu, 13 Jan 2022 09:48:12 +0000
+Subject: [PATCH 07/27] remoting: codec: fix missing cmath header
+
+Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+---
+ remoting/codec/codec_test.cc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/remoting/codec/codec_test.cc b/remoting/codec/codec_test.cc
+index 43e380edc5e66..be4032ec67714 100644
+--- a/remoting/codec/codec_test.cc
++++ b/remoting/codec/codec_test.cc
+@@ -8,6 +8,7 @@
+ #include <stdint.h>
+ #include <stdlib.h>
+ 
++#include <cmath>
+ #include <memory>
+ #include <utility>
+ 
+-- 
+2.25.1
+

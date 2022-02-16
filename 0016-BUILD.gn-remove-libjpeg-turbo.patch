@@ -1,0 +1,35 @@
+From 5825dbd35bcd46370f4ae58cbe3fc1a31292a73a Mon Sep 17 00:00:00 2001
+From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+Date: Fri, 14 Jan 2022 07:17:39 +0000
+Subject: [PATCH 16/27] BUILD.gn: remove libjpeg-turbo
+
+riscv64 is not supported in libjpeg-turbo.
+
+Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+---
+ BUILD.gn | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 22257ece051c0..def5d93250e0d 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -739,7 +739,6 @@ group("gn_all") {
+       "//third_party/angle:libEGL",
+       "//third_party/angle:libGLESv2",
+       "//third_party/leveldatabase:leveldb_test_targets",
+-      "//third_party/libjpeg_turbo:simd",
+       "//third_party/opus:opus_compare",
+       "//third_party/opus:opus_demo",
+       "//third_party/opus:test_opus_api",
+@@ -761,7 +760,6 @@ group("gn_all") {
+       if (enable_nacl) {
+         deps += [ "//native_client/src/trusted/platform_qualify:vcpuid" ]
+       }
+-      deps += [ "//third_party/libjpeg_turbo:simd_asm" ]
+     }
+     if ((is_linux || is_chromeos) && current_toolchain == host_toolchain) {
+       deps += [ "//v8:v8_shell" ]
+-- 
+2.25.1
+
