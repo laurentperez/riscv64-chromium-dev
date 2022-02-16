@@ -61,13 +61,19 @@ solutions = [
 ]
 ```
 
-4. Run the Chromium-specific hooks, this will download additional toolchain / binaries that we might need for the build later.
+4. Checkout to specific commits where the patchset are based on.
+```
+$ cd ~/chromium/src
+$ git checkout 3270d4bb47abb
+```
+
+5. Run the Chromium-specific hooks, this will download additional toolchain / binaries that we might need for the build later.
 ```
 $ cd ~/chromium/src
 $ gclient runhooks
 ```
 
-5. Set up the build configurations in args.gn
+6. Set up the build configurations in args.gn
 ```
 $ mkdir -p out/riscv64
 $ vim out/riscv64/args.gn
@@ -102,9 +108,13 @@ use_gold = false
 use_lld = true
 ```
 
-6. Apply the patches.
+7. Apply the patches from this repository.
+```
+$ cd ~/chromium/src
+$ git am <patch>
+```
 
-7. Setup ffmpeg.
+8. Setup ffmpeg.
 ```
 $ cd third_party/ffmpeg
 $ ./chromium/scripts/build_ffmpeg.py linux riscv64
@@ -112,7 +122,7 @@ $ ./chromium/scripts/generate_gn.py
 $ ./chromium/scripts/copy_config.sh
 ```
 
-8. Run the build and start resolving build issues.
+9. Run the build and start resolving build issues.
 ```
 $ autoninja -C out/riscv64 chrome
 ```
