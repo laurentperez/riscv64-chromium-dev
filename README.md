@@ -6,7 +6,11 @@
 
 1. Build a cross-compile toolchain for llvm and clang.
 ```
-$ sudo apt-get -y install binutils build-essential libtool texinfo gzip zip unzip patchutils curl git make cmake ninja-build automake bison flex gperf grep sed gawk python bc zlib1g-dev libexpat1-dev libmpc-dev libglib2.0-dev libfdt-dev libpixman-1-dev 
+$ sudo apt-get -y install binutils build-essential libtool \
+  texinfo gzip zip unzip patchutils curl git make cmake \
+  ninja-build automake bison flex gperf grep sed gawk \
+  python bc zlib1g-dev libexpat1-dev libmpc-dev \
+  libglib2.0-dev libfdt-dev libpixman-1-dev 
 
 $ mkdir ~/riscv
 $ cd ~/riscv
@@ -129,7 +133,24 @@ $ autoninja -C out/riscv64 chrome
 
 ## Debugging
 
-1. Generate dependency tree from GN
+1. Generate dependency tree from GN.
 ```
 $ gn desc out/risc64 chrome --tree
 ```
+
+2. Launch chromium browser on headless server.
+```
+# Print screenshot and save as PDF
+$ chrome --headless --disable-gpu --print-to-pdf https://google.com
+
+# Capture screenshot
+$ chrome --headless --disable-gpu --screenshot https://www.google.com
+```
+
+Note: Running with --screenshot will produce a file named screenshot.png in the current working directory.
+
+## Credits
+
+1. PPC Porting Guide: https://wiki.raptorcs.com/wiki/Porting/Chromium
+2. SUSE Chromium Port: https://build.opensuse.org/package/show/network:chromium/chromium?expand=1
+3. Fedora rawhide Chromium Port: https://src.fedoraproject.org/rpms/chromium/tree/rawhide 
