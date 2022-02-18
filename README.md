@@ -141,7 +141,7 @@ $ gn desc out/risc64 chrome --tree
 2. Launch chromium browser on headless server.
 ```
 # Print screenshot and save as PDF
-$ chrome --headless --disable-gpu --print-to-pdf https://google.com
+$ chrome --headless --disable-gpu --print-to-pdf https://www.google.com
 
 # Capture screenshot
 $ chrome --headless --disable-gpu --screenshot https://www.google.com
