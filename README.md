@@ -1,5 +1,10 @@
 # Chromium Development / Porting for RISC-V
 
+## Build host
+
+Ubuntu 20.04.4 LTS
+
+
 ## Setup cross-compile toolchain
 
 ### LLVM / Clang
