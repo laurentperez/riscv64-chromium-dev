@@ -1,7 +1,7 @@
-From 89f38845559318bb1e86148f15fe62a94b516ddc Mon Sep 17 00:00:00 2001
+From 4d578b615efec3cff00a5aa31782d2065904dc59 Mon Sep 17 00:00:00 2001
 From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 Date: Fri, 14 Jan 2022 04:17:31 +0000
-Subject: [PATCH 11/27] build: config: posix: do not recompile sysroot
+Subject: [PATCH 11/25] build: config: posix: do not recompile sysroot
 
 Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 ---

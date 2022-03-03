@@ -1,0 +1,30 @@
+From 1145064dcaa266cbd315af47910518134cf80a87 Mon Sep 17 00:00:00 2001
+From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+Date: Fri, 14 Jan 2022 05:06:56 +0000
+Subject: [PATCH 12/25] build: config: compiler: set generic riscv64 flags
+
+Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
+---
+ build/config/compiler/BUILD.gn | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
+index c577e8352b956..1a1f2a7b586d0 100644
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -1177,6 +1177,12 @@ config("compiler_cpu_abi") {
+         cflags += [ "-m64" ]
+         ldflags += [ "-m64" ]
+       }
++    } else if (current_cpu == "riscv64") {
++      cflags += [
++        "-m64",
++        "-march=rv64gc",
++        "-mabi=lp64d",
++      ]
+     } else if (current_cpu == "s390x") {
+       cflags += [ "-m64" ]
+       ldflags += [ "-m64" ]
+-- 
+2.25.1
+

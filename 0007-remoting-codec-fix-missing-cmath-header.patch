@@ -1,7 +1,7 @@
-From c0e626dbc2ccc2b4cc1bc5ebf642364e2dcd46af Mon Sep 17 00:00:00 2001
+From 67efba5f6ec7b5dafc7bc895ce01832426b2601b Mon Sep 17 00:00:00 2001
 From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 Date: Thu, 13 Jan 2022 09:48:12 +0000
-Subject: [PATCH 07/27] remoting: codec: fix missing cmath header
+Subject: [PATCH 07/25] remoting: codec: fix missing cmath header
 
 Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 ---
@@ -9,7 +9,7 @@ Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/remoting/codec/codec_test.cc b/remoting/codec/codec_test.cc
-index 43e380edc5e66..be4032ec67714 100644
+index 55b9aa77c8e07..9923ba7bdef78 100644
 --- a/remoting/codec/codec_test.cc
 +++ b/remoting/codec/codec_test.cc
 @@ -8,6 +8,7 @@

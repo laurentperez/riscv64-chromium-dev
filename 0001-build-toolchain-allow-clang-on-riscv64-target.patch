@@ -1,7 +1,7 @@
-From 1d11fa74be4592bbd0d44092b8fa136a552d86d5 Mon Sep 17 00:00:00 2001
+From 96e6e5148d849b27f072e15cdc07ebb1d7b9ebff Mon Sep 17 00:00:00 2001
 From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 Date: Thu, 13 Jan 2022 02:33:08 +0000
-Subject: [PATCH 01/27] build: toolchain: allow clang on riscv64 target
+Subject: [PATCH 01/25] build: toolchain: allow clang on riscv64 target
 
 Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 ---

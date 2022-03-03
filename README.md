@@ -73,7 +73,8 @@ solutions = [
 4. Checkout to specific commits where the patchset are based on.
 ```
 $ cd ~/chromium/src
-$ git checkout 3270d4bb47abb
+$ git checkout 6c5fd93a02e79
+
 ```
 
 5. Run the Chromium-specific hooks, this will download additional toolchain / binaries that we might need for the build later.

@@ -1,7 +1,7 @@
-From 4223921200243cd26397ecff53d0a0e558ec4d09 Mon Sep 17 00:00:00 2001
+From a20256ba9d3cb6c7f6650b6ae26c44c5580d01ab Mon Sep 17 00:00:00 2001
 From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 Date: Thu, 13 Jan 2022 08:57:34 +0000
-Subject: [PATCH 04/27] chrome: common: remove unrar code
+Subject: [PATCH 04/25] chrome: common: remove unrar code
 
 unrar code is non-free.
 
