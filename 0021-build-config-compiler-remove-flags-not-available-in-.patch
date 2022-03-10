@@ -1,7 +1,7 @@
-From 003b7fb3ba427bc78b19b591418c59df2a9c0846 Mon Sep 17 00:00:00 2001
+From 937aab2451d9f8997c57df701a9e497b20282cb3 Mon Sep 17 00:00:00 2001
 From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 Date: Mon, 17 Jan 2022 08:15:52 +0000
-Subject: [PATCH 21/25] build: config: compiler: remove flags not available in
+Subject: [PATCH 21/23] build: config: compiler: remove flags not available in
  custom clang
 
 Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
@@ -10,7 +10,7 @@ Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
  1 file changed, 13 deletions(-)
 
 diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
-index 1a1f2a7b586d0..2acc089284dae 100644
+index 48435f6bb5dd7..9aa96a006cfde 100644
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
 @@ -350,7 +350,6 @@ config("compiler") {

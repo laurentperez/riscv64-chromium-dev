@@ -1,7 +1,7 @@
-From dd2e7477e2626fa963ec90fde09e71084fcba38b Mon Sep 17 00:00:00 2001
+From 1b9a2c39a04e3c1066ec9bf0e2a66abec0f95ea6 Mon Sep 17 00:00:00 2001
 From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 Date: Fri, 14 Jan 2022 09:07:44 +0000
-Subject: [PATCH 20/25] media: media_options: disable dav1d decoder
+Subject: [PATCH 20/23] media: media_options: disable dav1d decoder
 
 Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 ---

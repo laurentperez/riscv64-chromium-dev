@@ -1,7 +1,7 @@
-From d1105983156407ba79577030232fa4f6c15b3cbd Mon Sep 17 00:00:00 2001
+From dccaf52e79facfd36a10c9b4042bcee1bcbd1248 Mon Sep 17 00:00:00 2001
 From: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 Date: Fri, 14 Jan 2022 07:19:01 +0000
-Subject: [PATCH 16/25] base: add riscv64 support
+Subject: [PATCH 16/23] base: add riscv64 support
 
 Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
 ---
@@ -11,7 +11,7 @@ Signed-off-by: Rebecca Chang Swee Fun <rebecca.chang@starfivetech.com>
  create mode 100644 base/allocator/partition_allocator/starscan/stack/asm/riscv64/push_registers_asm.cc
 
 diff --git a/base/BUILD.gn b/base/BUILD.gn
-index 91339c95ec94d..5a0120ec3a5d4 100644
+index e671691598b4c..c69310ab9974d 100644
 --- a/base/BUILD.gn
 +++ b/base/BUILD.gn
 @@ -2105,6 +2105,9 @@ mixed_component("base") {
