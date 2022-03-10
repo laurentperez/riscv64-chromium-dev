@@ -121,10 +121,21 @@ use_lld = true
 7. Apply the patches from this repository.
 ```
 $ cd ~/chromium/src
-$ git am <patch>
+$ git am ~/riscv64-chromium-dev/*.patch
 ```
 
-8. Setup ffmpeg.
+8. Apply the patches in the untracked folder.
+This is due to third_party components are not tracked
+under the same git history.
+NOTE: There is no script to help in this yet. So we have to
+run patch command manually in the respective folders.
+```
+$ cd third_party/<component>
+$ patch -p1 < ~/riscv64-chromium-dev/untracked/XXX.patch
+```
+
+9. Setup ffmpeg. It should have been patched and able to
+generate the files required to build riscv64.
 ```
 $ cd third_party/ffmpeg
 $ ./chromium/scripts/build_ffmpeg.py linux riscv64
