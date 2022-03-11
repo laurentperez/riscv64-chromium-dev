@@ -1,3 +1,9 @@
+# :warning: **New Rebase Is Available In https://github.com/starfive-tech/riscv-chromium-patch**
+
+
+# Temporary personal repo while setting up official repo for work
+
+
 # Chromium Development / Porting for RISC-V
 
 ## Build host
